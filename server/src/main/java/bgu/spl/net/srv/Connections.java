@@ -4,9 +4,9 @@ import java.io.IOException;
 
 public interface Connections<T> {
 
-    boolean send(int connectionId, T msg);
+    void connect(int connectionId, ConnectionHandler<T> handler);
 
-    void send(String channel, T msg);
+    boolean send(int connectionId, T msg);
 
     void disconnect(int connectionId);
 }
