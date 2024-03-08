@@ -2,6 +2,7 @@ package bgu.spl.net.srv;
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 import bgu.spl.net.api.MessagingProtocol;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -53,8 +54,8 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         sock.close();
     }
 
-    @Override
-    public void send(T msg) {
-        //IMPLEMENT IF NEEDED
-    }
+//    @Override
+//    public void send(T msg) {
+//        //IMPLEMENT IF NEEDED
+//    }
 }
