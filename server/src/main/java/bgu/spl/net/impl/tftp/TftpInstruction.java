@@ -2,8 +2,6 @@ package bgu.spl.net.impl.tftp;
 
 // TODO wherever there is a byte[] to short cast add 0xff to the first byte
 
-import bgu.spl.net.srv.Connections;
-
 public abstract class TftpInstruction implements java.io.Serializable {
     public final Opcode opcode;
 
