@@ -1,22 +1,21 @@
 package bgu.spl.net.srv;
 
-public interface Connections<T> {
+import java.io.Closeable;
 
+public interface Connections<T> extends Iterable<ConnectionHandler<T>>, Closeable {
     void connect(int connectionId, ConnectionHandler<T> handler);
 
     boolean send(int connectionId, T msg);
 
     void disconnect(int connectionId);
 
+    boolean isUserLoggedIn(String username);
 
-    boolean isUserLoggedIn(String userName); // TODO: remember to do this concurrent
+    boolean addUsername(String username, int connectionId);
 
-    boolean addUserName(String userName, int connectionId);
+    boolean removeUsername(String username);
 
-    boolean removeUserName(String userName);
+    String getUsername(int connectionId);
 
-    String getUserName(int connectionId);
-
-    // TODO we can maybe take those 3 functions to a interface
-
+    int getUniqueID();
 }

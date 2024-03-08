@@ -16,5 +16,7 @@ public interface ConnectionHandler<T> extends Closeable {
      * Comment the following lines (both send methods) for the existing implementations to work.
      *
      */
-//    void send(T msg);
+   void send(T msg);
+
+   int getConnectionId();   
 }

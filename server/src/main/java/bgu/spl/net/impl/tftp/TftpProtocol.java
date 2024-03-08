@@ -3,16 +3,14 @@ package bgu.spl.net.impl.tftp;
 import bgu.spl.net.api.BidiMessagingProtocol;
 import bgu.spl.net.srv.Connections;
 
-public class TftpProtocol implements BidiMessagingProtocol<TftpInstruction, byte[]> {
-// TODO perhaps change the byte[] type to TftpInstruction once again.
-
+public class TftpProtocol implements BidiMessagingProtocol<TftpInstruction> {
     private int connectionId;
-    private Connections<byte[]> connections;
+    private Connections<TftpInstruction> connections;
 
     TftpProtocolStateMachine TftpProtocolStateMachine;
 
     @Override
-    public void start(int connectionId, Connections<byte[]> connections) {
+    public void start(int connectionId, Connections<TftpInstruction> connections) {
         this.connectionId = connectionId;
         this.connections = connections;
         TftpProtocolStateMachine = new TftpProtocolStateMachine(connections, connectionId);
@@ -20,23 +18,19 @@ public class TftpProtocol implements BidiMessagingProtocol<TftpInstruction, byte
 
     @Override
     public void process(TftpInstruction instruction) {
-
-        instruction.execute(this);
-
+        TftpProtocolStateMachine.execute(instruction);
     }
 
     @Override
     public boolean shouldTerminate() {
         return TftpProtocolStateMachine.isTerminated();
-        // TODO: where is this called?
     }
 
-    public Connections<byte[]> getConnections() {
+    public Connections<TftpInstruction> getConnections() {
         return connections;
     }
 
-
     public int getConnectionId() {
-        return connectionId; // TODO: should this be at the interface level defined?
+        return connectionId;
     }
 }

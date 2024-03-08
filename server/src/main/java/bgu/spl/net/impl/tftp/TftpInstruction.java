@@ -1,7 +1,5 @@
 package bgu.spl.net.impl.tftp;
 
-// TODO wherever there is a byte[] to short cast add 0xff to the first byte
-
 public abstract class TftpInstruction implements java.io.Serializable {
     public final Opcode opcode;
 
@@ -10,14 +8,22 @@ public abstract class TftpInstruction implements java.io.Serializable {
     }
 
     public enum Opcode {
-        DEFAULT, RRQ, WRQ, DATA, ACK, ERROR, DIRQ, LOGRQ, DELRQ, BCAST, DISC
-    }
+        DEFAULT(0), RRQ(1), WRQ(2), DATA(3), ACK(4), ERROR(5), DIRQ(6), LOGRQ(7), DELRQ(8), BCAST(9), DISC(10);
 
-    public abstract void execute(TftpProtocol protocol);
+        public final int value;
+
+        Opcode(int value) {
+            this.value = value;
+        }
+
+        public int value() {
+            return value;
+        }
+    }
 
     public static TftpInstruction parse(byte[] bytes) {
         if (bytes.length < 2)
-            return new ERROR(ERROR.ErrorCode.NOT_DEFINED, "Illegal input"); // TODO
+            return new ERROR(ERROR.ErrorCode.NOT_DEFINED, "Illegal input");
 
         byte[] data = new byte[bytes.length - 2];
         System.arraycopy(bytes, 2, data, 0, data.length);
@@ -33,7 +39,7 @@ public abstract class TftpInstruction implements java.io.Serializable {
             return new ERROR(ERROR.ErrorCode.NOT_DEFINED, "Wrong Data");
 
         try {
-            switch (bytes[1]) { // TODO make sure each case is correct
+            switch ((int) bytes[1]) {
                 case 1:
                     return new RRQ(data);
                 case 2:
@@ -51,7 +57,7 @@ public abstract class TftpInstruction implements java.io.Serializable {
                 case 8:
                     return new DELRQ(data);
                 case 9:
-                    return new BCAST(data); // TODO bcasts are never to be created by the user, leave this here for debugging and replace with error with code 0
+                    return new BCAST(data);
                 case 10:
                     return new DISC(data);
                 default:
@@ -60,6 +66,10 @@ public abstract class TftpInstruction implements java.io.Serializable {
         } catch (IllegalTFTPOperationException e) {
             return new ERROR(ERROR.ErrorCode.NOT_DEFINED, e.getMessage());
         }
+    }
+
+    public byte[] toPacket() {
+        return new byte[0];
     }
 }
 
@@ -74,11 +84,6 @@ class RRQ extends TftpInstruction {
     public String getFilename() {
         return filename;
     }
-
-    @Override
-    public void execute(TftpProtocol protocol) {
-
-    }
 }
 
 class WRQ extends TftpInstruction {
@@ -91,11 +96,6 @@ class WRQ extends TftpInstruction {
 
     public String getFilename() {
         return filename;
-    }
-
-    @Override
-    public void execute(TftpProtocol protocol) {
-
     }
 }
 
@@ -112,6 +112,9 @@ class DATA extends TftpInstruction {
 
         this.packetSize = (short) ((data[0] << 8) | (data[1] & 0xff));
 
+        if (data.length != packetSize + 4)
+            throw new IllegalTFTPOperationException("Wrong packet Size as data");
+
         if (packetSize < 0 || packetSize > 512)
             throw new IllegalTFTPOperationException("Invalid packet size");
 
@@ -122,6 +125,7 @@ class DATA extends TftpInstruction {
 
         this.data = new byte[data.length - 4];
         System.arraycopy(data, 4, this.data, 0, this.data.length);
+
     }
 
     public short getPacketSize() {
@@ -136,9 +140,29 @@ class DATA extends TftpInstruction {
         return data;
     }
 
-    @Override
-    public void execute(TftpProtocol protocol) {
+    public static DATA buildData(byte[] dataToSend, short blockNumber) {
+        byte[] tmpBytes = new byte[] { (byte) (dataToSend.length >> 8), (byte) (dataToSend.length & 0xff),
+                (byte) (blockNumber >> 8), (byte) (blockNumber & 0xff) };
 
+        byte[] inputBytes = new byte[dataToSend.length + 4];
+
+        System.arraycopy(tmpBytes, 0, inputBytes, 0, 4);
+        System.arraycopy(dataToSend, 0, inputBytes, 4, dataToSend.length);
+
+        return new DATA(inputBytes);
+    }
+
+    @Override
+    public byte[] toPacket() {
+        byte[] output = new byte[data.length + 6];
+
+        byte[] starter = new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
+                (byte) (packetSize >> 8), (byte) (packetSize & 0xff),
+                (byte) (blockNumber >> 8), (byte) (blockNumber & 0xff) };
+
+        System.arraycopy(starter, 0, output, 0, 6);
+        System.arraycopy(data, 0, output, 6, packetSize);
+        return output;
     }
 }
 
@@ -167,13 +191,9 @@ class ACK extends TftpInstruction {
     }
 
     @Override
-    public void execute(TftpProtocol protocol) {
-
-    }
-
     public byte[] toPacket() {
-        // TODO implement
-        return null;
+        return new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff), (byte) (blockNumber >> 8),
+                (byte) (blockNumber & 0xff) };
     }
 }
 
@@ -185,7 +205,7 @@ class ERROR extends TftpInstruction {
         super(Opcode.ERROR);
 
         if (data.length < 3)
-            throw new IllegalTFTPOperationException("Invalid data"); // TODO < 4?
+            throw new IllegalTFTPOperationException("Invalid data"); // TODO < 4? check forum
 
         short ec = (short) ((data[0] << 8) | (data[1] & 0xff));
 
@@ -212,17 +232,33 @@ class ERROR extends TftpInstruction {
     }
 
     @Override
-    public void execute(TftpProtocol protocol) {
-
-    }
-
     public byte[] toPacket() {
-        // TODO implement
-        return null;
+        byte[] errBytes = errorMsg.getBytes();
+        byte[] output = new byte[errBytes.length + 5];
+
+        byte[] starter = new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
+                (byte) (errorCode.value() >> 8), (byte) (errorCode.value() & 0xff) };
+
+        System.arraycopy(starter, 0, output, 0, 4);
+        System.arraycopy(errBytes, 0, output, 4, errBytes.length);
+        output[output.length - 1] = 0;
+        return output;
     }
 
     public enum ErrorCode {
-        NOT_DEFINED, FILE_NOT_FOUND, ACCESS_VIOLATION, DISK_FULL, ILLEGAL_TFTP_OPERATION, FILE_ALREADY_EXISTS, USER_NOT_LOGGED_IN, USER_ALREADY_LOGGED_IN
+        NOT_DEFINED(0), FILE_NOT_FOUND(1), ACCESS_VIOLATION(2), DISK_FULL(3), ILLEGAL_TFTP_OPERATION(4),
+        FILE_ALREADY_EXISTS(5),
+        USER_NOT_LOGGED_IN(6), USER_ALREADY_LOGGED_IN(7);
+
+        private int value;
+
+        ErrorCode(int value) {
+            this.value = value;
+        }
+
+        public int value() {
+            return value;
+        }
     }
 }
 
@@ -233,11 +269,6 @@ class DIRQ extends TftpInstruction {
 
     public DIRQ(byte[] data) {
         this();
-    }
-
-    @Override
-    public void execute(TftpProtocol protocol) {
-
     }
 }
 
@@ -252,22 +283,6 @@ class LOGRQ extends TftpInstruction {
     public String getUsername() {
         return username;
     }
-
-    @Override
-    public void execute(TftpProtocol protocol) { // TODO what if this is the second packet? check instructions pdf
-//        Connections<byte[]> connections = protocol.getConnections();
-//        if (protocol.isLoggedIn()) // TODO: Unsure if a new client can use a name that is already logged in
-//            connections.send(protocol.getConnectionId(), new ERROR(ERROR.ErrorCode.USER_ALREADY_LOGGED_IN, "User already logged in").toPacket());
-//        else {
-//            if (connections.isUserLoggedIn(username)) {
-//                connections.send(protocol.getConnectionId(), new ERROR(ERROR.ErrorCode.USER_ALREADY_LOGGED_IN, "Another client is using this log in name").toPacket());
-//            } else {
-//                protocol.LogIn();
-//                connections.addUserName(username, protocol.getConnectionId());
-//                connections.send(protocol.getConnectionId(), new ACK((short) 0).toPacket());
-//            }
-//        }
-    } // TODO remove all execute in instructions.
 }
 
 class DELRQ extends TftpInstruction {
@@ -280,11 +295,6 @@ class DELRQ extends TftpInstruction {
 
     public String getFilename() {
         return filename;
-    }
-
-    @Override
-    public void execute(TftpProtocol protocol) {
-
     }
 }
 
@@ -300,14 +310,7 @@ class BCAST extends TftpInstruction {
 
     public BCAST(byte[] data) {
         super(Opcode.BCAST);
-        throw new IllegalTFTPOperationException("Client should not send BCAST"); // tODO i hate this
-//        super(Opcode.BCAST);
-//
-//        if (data.length < 2 || (data[0] > 1 || data[0] < 0)) // TODO can the filename be empty?
-//            throw new IllegalTFTPOperationException("Invalid data");
-//
-//        this.added = data[0] == 1;
-//        this.filename = new String(data, 1, data.length - 1);
+        throw new IllegalTFTPOperationException("Client should not send BCAST");
     }
 
     public boolean getAdded() {
@@ -319,8 +322,17 @@ class BCAST extends TftpInstruction {
     }
 
     @Override
-    public void execute(TftpProtocol protocol) {
+    public byte[] toPacket() {
+        byte[] fnBytes = filename.getBytes();
+        byte[] output = new byte[fnBytes.length + 4];
 
+        byte[] starter = new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
+                (byte) (added ? 1 : 0) };
+
+        System.arraycopy(starter, 0, output, 0, 3);
+        System.arraycopy(fnBytes, 0, output, 3, fnBytes.length);
+        output[output.length - 1] = 0;
+        return output;
     }
 }
 
@@ -331,16 +343,5 @@ class DISC extends TftpInstruction {
 
     public DISC(byte[] data) {
         this();
-    }
-
-    @Override
-    public void execute(TftpProtocol protocol) {
-//        Connections<byte[]> connections = protocol.getConnections();
-//        if (protocol.isLoggedIn()) {
-//            connections.removeUserName(connections.getUserName(protocol.getConnectionId()));
-//            connections.send(protocol.getConnectionId(), new ACK((short) 0).toPacket()); // todo make boolean ack constructor
-//        } else
-//            connections.send(protocol.getConnectionId(), new ERROR(ERROR.ErrorCode.USER_NOT_LOGGED_IN, "User not logged in").toPacket());
-//        protocol.terminate();
     }
 }
