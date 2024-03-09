@@ -128,7 +128,6 @@ class DATA extends TftpInstruction {
 
         this.data = new byte[data.length - 4];
         System.arraycopy(data, 4, this.data, 0, this.data.length);
-
     }
 
     public short getPacketSize() {
@@ -144,8 +143,8 @@ class DATA extends TftpInstruction {
     }
 
     public static DATA buildData(byte[] dataToSend, short blockNumber) {
-        byte[] tmpBytes = new byte[] { (byte) (dataToSend.length >> 8), (byte) (dataToSend.length & 0xff),
-                (byte) (blockNumber >> 8), (byte) (blockNumber & 0xff) };
+        byte[] tmpBytes = new byte[]{(byte) (dataToSend.length >> 8), (byte) (dataToSend.length & 0xff),
+                (byte) (blockNumber >> 8), (byte) (blockNumber & 0xff)};
 
         byte[] inputBytes = new byte[dataToSend.length + 4];
 
@@ -159,9 +158,9 @@ class DATA extends TftpInstruction {
     public byte[] toPacket() {
         byte[] output = new byte[data.length + 6];
 
-        byte[] starter = new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
+        byte[] starter = new byte[]{(byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
                 (byte) (packetSize >> 8), (byte) (packetSize & 0xff),
-                (byte) (blockNumber >> 8), (byte) (blockNumber & 0xff) };
+                (byte) (blockNumber >> 8), (byte) (blockNumber & 0xff)};
 
         System.arraycopy(starter, 0, output, 0, 6);
         System.arraycopy(data, 0, output, 6, packetSize);
@@ -195,8 +194,8 @@ class ACK extends TftpInstruction {
 
     @Override
     public byte[] toPacket() {
-        return new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff), (byte) (blockNumber >> 8),
-                (byte) (blockNumber & 0xff) };
+        return new byte[]{(byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff), (byte) (blockNumber >> 8),
+                (byte) (blockNumber & 0xff)};
     }
 }
 
@@ -218,7 +217,7 @@ class ERROR extends TftpInstruction {
         this.errorCode = ErrorCode.values()[ec];
 
         this.errorMsg = new String(data, 2, data.length - 2); // TODO: for some reason im not sure if
-                                                                    // we can reach here with an error message from client, which would bungle things.
+        // we can reach here with an error message from client, which would bungle things.
     }
 
     public ERROR(ErrorCode errorCode, String errorMsg) {
@@ -240,8 +239,8 @@ class ERROR extends TftpInstruction {
         byte[] errBytes = errorMsg.getBytes();
         byte[] output = new byte[errBytes.length + 5];
 
-        byte[] starter = new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
-                (byte) (errorCode.value() >> 8), (byte) (errorCode.value() & 0xff) };
+        byte[] starter = new byte[]{(byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
+                (byte) (errorCode.value() >> 8), (byte) (errorCode.value() & 0xff)};
 
         System.arraycopy(starter, 0, output, 0, 4);
         System.arraycopy(errBytes, 0, output, 4, errBytes.length);
@@ -330,8 +329,8 @@ class BCAST extends TftpInstruction {
         byte[] fnBytes = filename.getBytes();
         byte[] output = new byte[fnBytes.length + 4];
 
-        byte[] starter = new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
-                (byte) (added ? 1 : 0) };
+        byte[] starter = new byte[]{(byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
+                (byte) (added ? 1 : 0)};
 
         System.arraycopy(starter, 0, output, 0, 3);
         System.arraycopy(fnBytes, 0, output, 3, fnBytes.length);

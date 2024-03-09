@@ -6,8 +6,8 @@ public interface MessageEncoderDecoder<T> {
      * add the next byte to the decoding process
      *
      * @param nextByte the next byte to consider for the currently decoded
-     * message
-     * @return a message if this byte completes one or null if it doesnt.
+     *                 message
+     * @return a message if this byte completes one or null if it doesn't.
      */
     T decodeNextByte(byte nextByte);
 
@@ -18,7 +18,4 @@ public interface MessageEncoderDecoder<T> {
      * @return the encoded bytes
      */
     byte[] encode(T message);
-
-    boolean isInPacketIO();
-
 }

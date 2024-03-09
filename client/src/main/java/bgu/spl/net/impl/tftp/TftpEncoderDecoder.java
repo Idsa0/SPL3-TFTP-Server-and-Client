@@ -10,6 +10,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<TftpInstruction
     private int len = 0;
     private short bitsLeft = 0;
     private short opCode;
+
     // TODO: can we move this, IOHandler, and other files which are repeated in server into an external library?
     @Override
     public TftpInstruction decodeNextByte(byte nextByte) {
@@ -45,14 +46,14 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<TftpInstruction
             if (opCode == Opcode.ACK.value() && len == 4)
                 return getInstructionAndReset();
             if ((len > 4 && opCode == Opcode.ERROR.value()) ||
-                (len > 3 && opCode == Opcode.BCAST.value()) )
+                    (len > 3 && opCode == Opcode.BCAST.value()))
                 if (nextByte == 0)
                     return getInstructionAndReset();
         }
         return null;
     }
 
-    public boolean isInPacketIO(){
+    public boolean isInPacketIO() {
         return len > 0;
     }
 

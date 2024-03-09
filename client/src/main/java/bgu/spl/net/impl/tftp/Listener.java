@@ -2,6 +2,7 @@ package bgu.spl.net.impl.tftp;
 // TODO package name clash
 
 import bgu.spl.net.api.MessageEncoderDecoder;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.Closeable;
@@ -9,21 +10,18 @@ import java.io.IOException;
 import java.net.Socket;
 
 public class Listener implements Runnable, Closeable, ClientListener {
-
     private final TftpClientProtocol protocol;
     private final MessageEncoderDecoder<TftpInstruction> encdec; // TODO: can or should we move this back to generic?
     private Socket sock = null;
     private BufferedInputStream in;
     private BufferedOutputStream out;
     private volatile boolean connected = true;
-    
 
     public Listener(String addressName, int port, MessageEncoderDecoder<TftpInstruction> reader,
-            TftpClientProtocol protocol) {
+                    TftpClientProtocol protocol) {
         try {
             this.sock = new Socket(addressName, port);
         } catch (Exception e) {
-            
             e.printStackTrace();
         }
 
@@ -42,11 +40,11 @@ public class Listener implements Runnable, Closeable, ClientListener {
 
             // TODO "read = in.read() >= 0" might make troubles in a bidi connection.
             while (!protocol.shouldTerminate() && connected && (read = in.read()) >= 0) {
-                
-                
+
+
                 TftpInstruction nextMessage = encdec.decodeNextByte((byte) read);
                 if (nextMessage != null) // TODO: if we are reading a packet, we should be blocking the keyboard thread
-                                         // from changing us.
+                    // from changing us.
                     protocol.process(nextMessage);
             }
             close();
@@ -55,8 +53,6 @@ public class Listener implements Runnable, Closeable, ClientListener {
         }
     }
 
-
-    
     @Override
     public synchronized void close() throws IOException {
         connected = false;
@@ -82,5 +78,4 @@ public class Listener implements Runnable, Closeable, ClientListener {
         // TODO Auto-generated method stub
         throw new UnsupportedOperationException("Unimplemented method 'terminate'");
     }
-
 }

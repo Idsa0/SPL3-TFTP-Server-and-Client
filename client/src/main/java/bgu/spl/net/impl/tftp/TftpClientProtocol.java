@@ -6,6 +6,7 @@ public class TftpClientProtocol implements BidiMessagingProtocol<TftpInstruction
 
     private TftpProtocolStateMachine tftpProtocolStateMachine = new TftpProtocolStateMachine();
     private boolean shouldTerminate = false;
+
     public void addListener(ClientListener listener) {
         tftpProtocolStateMachine.addListener(listener);
     }
@@ -24,10 +25,8 @@ public class TftpClientProtocol implements BidiMessagingProtocol<TftpInstruction
         return tftpProtocolStateMachine.startStateAndWait(userInput);
     }
 
-    
     public void terminate() {
         shouldTerminate = true;
         // TODO interrupt if needed?
     }
-    
 }

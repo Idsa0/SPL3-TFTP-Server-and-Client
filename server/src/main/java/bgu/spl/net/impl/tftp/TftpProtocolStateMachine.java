@@ -4,7 +4,7 @@ import java.io.FileNotFoundException;
 import java.io.IOException;
 
 import bgu.spl.net.impl.tftp.ERROR.ErrorCode;
-import bgu.spl.net.impl.tftp.IOHandler.IOHelperMode;
+import bgu.spl.net.impl.tftp.IOHandler.IOHandlerMode;
 import bgu.spl.net.impl.tftp.TftpInstruction.Opcode;
 import bgu.spl.net.srv.ConnectionHandler;
 import bgu.spl.net.srv.Connections;
@@ -15,7 +15,7 @@ public class TftpProtocolStateMachine {
 
     private State currentState;
 
-    IOHandler ioHandler;
+    private IOHandler ioHandler;
 
     public TftpProtocolStateMachine(Connections<TftpInstruction> connections, int connectionId) {
         this.connections = connections;
@@ -25,7 +25,7 @@ public class TftpProtocolStateMachine {
 
     public void execute(TftpInstruction instruction) {
         if (instruction.opcode == TftpInstruction.Opcode.ERROR) { // if an error was generated during parsing.
-            connections.send(connectionId, ((ERROR) instruction));
+            connections.send(connectionId, instruction);
             return;
         }
         if (instruction.opcode == TftpInstruction.Opcode.DISC) {
@@ -82,7 +82,7 @@ public class TftpProtocolStateMachine {
 
     private void deleteFileAndRespond(DELRQ instruction) {
         String fileName = instruction.getFilename();
-        ioHandler = new IOHandler(fileName, IOHelperMode.DELETE);
+        ioHandler = new IOHandler(fileName, IOHandlerMode.DELETE);
         if (!ioHandler.fileExists())
             connections.send(connectionId, new ERROR(ERROR.ErrorCode.FILE_NOT_FOUND, "No such file"));
         else {
@@ -109,7 +109,7 @@ public class TftpProtocolStateMachine {
     private void beginRRQ(RRQ instruction) {
         currentState = State.RRQ;
 
-        ioHandler = new IOHandler(instruction.getFilename(), IOHelperMode.READ);
+        ioHandler = new IOHandler(instruction.getFilename(), IOHandlerMode.READ);
         try {
             ioHandler.start();
         } catch (FileNotFoundException e) {
@@ -143,20 +143,20 @@ public class TftpProtocolStateMachine {
                 connections.send(connectionId,
                         new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
                 endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                                   // and wait for the right package?
+                // and wait for the right package?
             }
         } else {
             connections.send(connectionId,
                     new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
             endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                               // and wait for the right package?
+            // and wait for the right package?
         }
     }
 
     private void beginWRQ(WRQ instruction) {
         currentState = State.WRQ;
 
-        ioHandler = new IOHandler(instruction.getFilename(), IOHelperMode.WRITE);
+        ioHandler = new IOHandler(instruction.getFilename(), IOHandlerMode.WRITE);
 
         if (!ioHandler.fileExists()) {
             connections.send(connectionId,
@@ -186,7 +186,7 @@ public class TftpProtocolStateMachine {
                 connections.send(connectionId,
                         new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting DATA " + ioHandler.getBlockNumber()));
                 endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                                   // and wait for the right package?
+                // and wait for the right package?
             }
         } else {
             connections.send(connectionId,
@@ -203,7 +203,7 @@ public class TftpProtocolStateMachine {
     private void beginDIRQ(DIRQ instruction) {
         currentState = State.DIRQ;
 
-        ioHandler = new IOHandler(IOHelperMode.DIR);
+        ioHandler = new IOHandler(IOHandlerMode.DIR);
         try {
             ioHandler.start();
             connections.send(connectionId,
@@ -229,13 +229,13 @@ public class TftpProtocolStateMachine {
                 connections.send(connectionId,
                         new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
                 endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                                   // and wait for the right package?
+                // and wait for the right package?
             }
         } else {
             connections.send(connectionId,
                     new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
             endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                               // and wait for the right package?
+            // and wait for the right package?
         }
     }
 

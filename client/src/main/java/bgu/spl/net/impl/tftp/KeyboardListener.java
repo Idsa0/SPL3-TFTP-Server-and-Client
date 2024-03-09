@@ -6,7 +6,7 @@ import bgu.spl.net.impl.tftp.TftpInstruction.Opcode;
 
 public class KeyboardListener implements Runnable {
 
-    private Listener listener;
+    private final Listener listener;
     private boolean shouldTerminate = false;
 
     public KeyboardListener(Listener listener) {
@@ -29,7 +29,6 @@ public class KeyboardListener implements Runnable {
 
         s.close();
         listener.terminate();
-
     }
 
     private void endProcess(TftpInstruction userInput, TftpInstruction result) {
@@ -46,7 +45,6 @@ public class KeyboardListener implements Runnable {
     }
 
     private TftpInstruction parseArgs(String[] args) {
-
         if (args.length > 2)
             return null;
 
@@ -77,10 +75,8 @@ public class KeyboardListener implements Runnable {
                 if (args.length != 2)
                     return null;
                 return new WRQ(args[1]);
-
             default:
                 return null;
         }
-
     }
 }

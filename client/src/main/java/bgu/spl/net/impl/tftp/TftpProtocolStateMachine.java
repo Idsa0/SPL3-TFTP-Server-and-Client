@@ -6,24 +6,17 @@ import java.nio.charset.StandardCharsets;
 import java.util.ArrayDeque;
 import java.util.Queue;
 
-import bgu.spl.net.impl.tftp.IOHandler.IOHelperMode;
+import bgu.spl.net.impl.tftp.IOHandler.IOHandlerMode;
 
 public class TftpProtocolStateMachine {
 
     private State currentState;
-
     private IOHandler ioHandler;
-
     private TftpInstruction currentInstruction;
-
-    private Object userInputLock = new Object();
-
+    private final Object userInputLock = new Object();
     private TftpInstruction outputResult;
-
     private short blockNumberExpected = 1;
-
     private ClientListener listener = null;
-
     private Queue<Byte> directoryListBuffer = new ArrayDeque<>();
 
     public TftpProtocolStateMachine() {
@@ -43,7 +36,6 @@ public class TftpProtocolStateMachine {
             case BCAST:
                 printOutBCAST((BCAST) instruction);
                 return;
-
             case DATA:
                 handleDATA((DATA) instruction);
                 break;
@@ -52,13 +44,11 @@ public class TftpProtocolStateMachine {
                 break;
             default:
                 throw new IllegalStateException();
-
         }
-
     }
 
     private void handleERROR(ERROR instruction) {
-        System.out.println("Recieved ERROR: ERROR code: " + instruction.getErrorCode().value() + " Message: "
+        System.out.println("Received ERROR: ERROR code: " + instruction.getErrorCode().value() + " Message: "
                 + instruction.getErrorMsg());
         reset();
         wakeUpKeyboardListener();
@@ -74,68 +64,61 @@ public class TftpProtocolStateMachine {
     private void handleDATA(DATA instruction) {
         switch (currentState) {
             case DIRQ:
-                    
                 if (instruction.getBlockNumber() != blockNumberExpected)
                     throw new IllegalStateException();
 
                 byte[] data = instruction.getData();
-                for (byte b: data)
+                for (byte b : data)
                     directoryListBuffer.add(b);
-                
-                // TODO find all .tostring() in code.
 
-                
-                if (instruction.getPacketSize() < 512){
-
+                // TODO find all .tosString() in code.
+                if (instruction.getPacketSize() < 512) {
                     StringBuilder sb = new StringBuilder();
-                    for (byte b: directoryListBuffer){
-                        sb.append(new String(new byte[] {b}, StandardCharsets.UTF_8));
-                    }
+                    for (byte b : directoryListBuffer)
+                        sb.append(new String(new byte[]{b}, StandardCharsets.UTF_8));
+
                     String[] fileList = sb.toString().split("\0");
-                    for (String filename: fileList)
+                    for (String filename : fileList)
                         System.out.println("> " + filename);
-                    
+
                     listener.send(new ACK(blockNumberExpected));
                     reset();
                     wakeUpKeyboardListener();
                 } else {
-                    listener.send (new ACK(blockNumberExpected));
+                    listener.send(new ACK(blockNumberExpected));
                     blockNumberExpected++;
                 }
-
                 break;
             case RRQ:
-
-                if (instruction.getBlockNumber()!= blockNumberExpected)
+                if (instruction.getBlockNumber() != blockNumberExpected)
                     throw new IllegalStateException();
 
-                if (blockNumberExpected == 1){
-                    ioHandler = new IOHandler(((RRQ)currentInstruction).getFilename(), IOHelperMode.WRITE);
-                    if (ioHandler.fileExists()){
+                if (blockNumberExpected == 1) {
+                    ioHandler = new IOHandler(((RRQ) currentInstruction).getFilename(), IOHandlerMode.WRITE);
+                    if (ioHandler.fileExists()) {
                         System.out.println("> file already exists!");
                         reset();
                         wakeUpKeyboardListener();
                         return;
                     }
-                    try{    
+                    try {
                         ioHandler.start();
-                    } catch (FileNotFoundException ignored) {}
-
+                    } catch (FileNotFoundException ignored) {
+                    }
                 }
-                try{
+                try {
                     ioHandler.writeNext(instruction.getData());
-                } catch (IOException e){
+                } catch (IOException e) {
                     System.out.println("> IO error on client side");
                     listener.send(new ACK((short) -1));
-                    
                     return;
-                }   
+                }
 
                 listener.send(new ACK(blockNumberExpected));
 
-                blockNumberExpected++;
+                ++blockNumberExpected;
 
-                if (ioHandler.isIODone()){
+                if (ioHandler.isIODone()) {
                     reset();
                     wakeUpKeyboardListener();
                 }
@@ -150,7 +133,6 @@ public class TftpProtocolStateMachine {
             case DELRQ:
             case DISC:
             case LOGRQ:
-
                 if (instruction.getBlockNumber() != 0)
                     throw new IllegalStateException();
 
@@ -158,12 +140,11 @@ public class TftpProtocolStateMachine {
                 wakeUpKeyboardListener();
                 break;
             case WRQ:
-
                 if (instruction.getBlockNumber() != blockNumberExpected - 1)
                     throw new IllegalStateException();
 
                 if (blockNumberExpected == 1) {
-                    ioHandler = new IOHandler(((WRQ) currentInstruction).getFilename(), IOHelperMode.READ);
+                    ioHandler = new IOHandler(((WRQ) currentInstruction).getFilename(), IOHandlerMode.READ);
                     try {
                         ioHandler.start();
                     } catch (FileNotFoundException e) {
@@ -178,7 +159,6 @@ public class TftpProtocolStateMachine {
                     System.out.println("WRQ completed");
                     reset();
                     wakeUpKeyboardListener();
-                    
                 }
                 DATA dataInstruction;
 
@@ -187,7 +167,7 @@ public class TftpProtocolStateMachine {
                     dataInstruction = DATA.buildData(ioHandler.readNext(), blockNumberExpected);
                 } catch (IOException e) {
                     System.out.println("IO error on client side");
-                    dataInstruction = DATA.buildData(new byte[] { 0, 0, 0, 0 }, blockNumberExpected);
+                    dataInstruction = DATA.buildData(new byte[]{0, 0, 0, 0}, blockNumberExpected);
                     ioHandler.IODone();
                 }
 
@@ -205,11 +185,10 @@ public class TftpProtocolStateMachine {
         currentInstruction = null;
         currentState = State.DEFAULT;
         directoryListBuffer.clear();
-        if (ioHandler!= null)
+        if (ioHandler != null)
             ioHandler.freeResources();
 
         ioHandler = null;
-        
     }
 
     private void printOutBCAST(BCAST instruction) {

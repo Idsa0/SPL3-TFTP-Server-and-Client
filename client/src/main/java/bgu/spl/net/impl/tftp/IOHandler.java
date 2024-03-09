@@ -10,22 +10,21 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IOHandler {
-    private IOHelperMode mode;
+    private IOHandlerMode mode;
     private String filename;
     private short blockNumber;
-    FileOutputStream out = null;
-    FileInputStream in = null;
-    ByteArrayInputStream dirqIn = null;
+    private FileOutputStream out = null;
+    private FileInputStream in = null;
+    private ByteArrayInputStream dirqIn = null;
     private boolean ioDone = false;
-
     private byte[] filenamesBytes;
 
-    public IOHandler(IOHelperMode mode) {
+    public IOHandler(IOHandlerMode mode) {
         this.mode = mode;
         this.blockNumber = 1;
     }
 
-    public IOHandler(String filename, IOHelperMode mode) {
+    public IOHandler(String filename, IOHandlerMode mode) {
         this(mode);
         this.filename = filename;
     }
@@ -39,12 +38,12 @@ public class IOHandler {
     }
 
     public byte[] readNext() throws IOException {
-        if (mode != IOHelperMode.READ && mode != IOHelperMode.DIR)
+        if (mode != IOHandlerMode.READ && mode != IOHandlerMode.DIR)
             throw new RuntimeException("reading in write/dirq mode");
 
         byte[] output = new byte[512];
         int readSize = 0;
-        if (mode == IOHelperMode.DIR) {
+        if (mode == IOHandlerMode.DIR) {
             readSize = dirqIn.read(output);
             if (readSize == 0) {
                 output[0] = 0;
@@ -72,7 +71,7 @@ public class IOHandler {
     }
 
     public void start() throws FileNotFoundException {
-        if (mode == IOHelperMode.DIR) {
+        if (mode == IOHandlerMode.DIR) {
             String[] strArr = Stream.of(new File("").listFiles())
                     .filter(file -> !file.isDirectory())
                     .map(File::getName)
@@ -86,7 +85,7 @@ public class IOHandler {
             filenamesBytes = builder.toString().getBytes();
 
             dirqIn = new ByteArrayInputStream(filenamesBytes);
-        } else if (mode == IOHelperMode.READ)
+        } else if (mode == IOHandlerMode.READ)
             in = new FileInputStream(filename);
         else
             out = new FileOutputStream(filename);
@@ -111,7 +110,7 @@ public class IOHandler {
     }
 
     public void writeNext(byte[] data) throws IOException {
-        if (mode != IOHelperMode.WRITE)
+        if (mode != IOHandlerMode.WRITE)
             throw new RuntimeException("trying to write in read mode");
 
         if (out == null)
@@ -128,7 +127,7 @@ public class IOHandler {
         return new File(filename).delete();
     }
 
-    public enum IOHelperMode {
+    public enum IOHandlerMode {
         READ, WRITE, DELETE, DIR
     }
 
