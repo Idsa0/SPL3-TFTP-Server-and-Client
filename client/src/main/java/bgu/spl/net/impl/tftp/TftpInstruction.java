@@ -34,7 +34,6 @@ public abstract class TftpInstruction implements java.io.Serializable {
         System.arraycopy(bytes, 0, opcode, 0, 2);
 
         return parse(opcode, data);
-        // TODO beautify
     }
 
     public static TftpInstruction parse(byte[] bytes, byte[] data) {
@@ -52,7 +51,7 @@ public abstract class TftpInstruction implements java.io.Serializable {
                 case 4:
                     return new ACK(data);
                 case 5:
-                    return new ERROR(data);
+                    return new ERROR(data); // TODO instruction parsing should change here in the client version.
                 case 6:
                     return new DIRQ(data);
                 case 7:
@@ -71,8 +70,10 @@ public abstract class TftpInstruction implements java.io.Serializable {
         }
     }
 
-    public byte[] toPacket() {
-        return new byte[0];
+    public abstract byte[] toPacket();
+
+    public byte[] opCodeBytes() {
+        return new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff) };
     }
 }
 
@@ -80,12 +81,28 @@ class RRQ extends TftpInstruction {
     private final String filename;
 
     public RRQ(byte[] data) {
+        this(new String(data).substring(0, data.length - 1));
+    }
+
+    public RRQ(String filename) {
         super(Opcode.RRQ);
-        this.filename = new String(data).substring(0, data.length - 1);
+        this.filename = filename;
     }
 
     public String getFilename() {
         return filename;
+    }
+
+    @Override
+    public byte[] toPacket() {
+        byte[] opcb = opCodeBytes();
+        byte[] filenameBytes = filename.getBytes();
+        byte[] output = new byte[filenameBytes.length + 3];
+        System.arraycopy(opcb, 0, output, 0, 2);
+        System.arraycopy(filenameBytes, 0, output, 2, filenameBytes.length);
+        output[output.length - 1] = '\0';
+
+        return output;
     }
 }
 
@@ -93,12 +110,28 @@ class WRQ extends TftpInstruction {
     private final String filename;
 
     public WRQ(byte[] data) {
+        this(new String(data).substring(0, data.length - 1));
+    }
+
+    public WRQ(String filename) {
         super(Opcode.WRQ);
-        this.filename = new String(data).substring(0, data.length - 1);
+        this.filename = filename;
     }
 
     public String getFilename() {
         return filename;
+    }
+
+    @Override
+    public byte[] toPacket() {
+        byte[] opcb = opCodeBytes();
+        byte[] filenameBytes = filename.getBytes();
+        byte[] output = new byte[filenameBytes.length + 3];
+        System.arraycopy(opcb, 0, output, 0, 2);
+        System.arraycopy(filenameBytes, 0, output, 2, filenameBytes.length);
+        output[output.length - 1] = '\0';
+
+        return output;
     }
 }
 
@@ -195,8 +228,8 @@ class ACK extends TftpInstruction {
 
     @Override
     public byte[] toPacket() {
-        return new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff), (byte) (blockNumber >> 8),
-                (byte) (blockNumber & 0xff) };
+        byte[] opcb = opCodeBytes();
+        return new byte[] { opcb[0], opcb[1], (byte) (blockNumber >> 8), (byte) (blockNumber & 0xff) };
     }
 }
 
@@ -217,8 +250,7 @@ class ERROR extends TftpInstruction {
 
         this.errorCode = ErrorCode.values()[ec];
 
-        this.errorMsg = new String(data, 2, data.length - 2); // TODO: for some reason im not sure if
-                                                                    // we can reach here with an error message from client, which would bungle things.
+        this.errorMsg = new String(data, 2, data.length - 2);
     }
 
     public ERROR(ErrorCode errorCode, String errorMsg) {
@@ -237,15 +269,16 @@ class ERROR extends TftpInstruction {
 
     @Override
     public byte[] toPacket() {
+        byte[] opcb = opCodeBytes();
         byte[] errBytes = errorMsg.getBytes();
         byte[] output = new byte[errBytes.length + 5];
 
-        byte[] starter = new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
+        byte[] starter = new byte[] { opcb[0], opcb[1],
                 (byte) (errorCode.value() >> 8), (byte) (errorCode.value() & 0xff) };
 
         System.arraycopy(starter, 0, output, 0, 4);
         System.arraycopy(errBytes, 0, output, 4, errBytes.length);
-        output[output.length - 1] = 0;
+        output[output.length - 1] = '\0';
         return output;
     }
 
@@ -274,18 +307,40 @@ class DIRQ extends TftpInstruction {
     public DIRQ(byte[] data) {
         this();
     }
+
+    @Override
+    public byte[] toPacket() {
+        return opCodeBytes();
+    }
+
 }
 
 class LOGRQ extends TftpInstruction {
     private final String username;
 
     public LOGRQ(byte[] data) {
+        this(new String(data).substring(0, data.length - 1));
+    }
+
+    public LOGRQ(String username) {
         super(Opcode.LOGRQ);
-        this.username = new String(data).substring(0, data.length - 1);
+        this.username = username;
     }
 
     public String getUsername() {
         return username;
+    }
+
+    @Override
+    public byte[] toPacket() {
+        byte[] opcb = opCodeBytes();
+        byte[] usernameBytes = username.getBytes();
+        byte[] output = new byte[usernameBytes.length + 3];
+        System.arraycopy(opcb, 0, output, 0, 2);
+        System.arraycopy(usernameBytes, 0, output, 2, usernameBytes.length);
+        output[output.length - 1] = '\0';
+
+        return output;
     }
 }
 
@@ -293,12 +348,28 @@ class DELRQ extends TftpInstruction {
     private final String filename;
 
     public DELRQ(byte[] data) {
+        this(new String(data).substring(0, data.length - 1));
+    }
+
+    public DELRQ(String filename) {
         super(Opcode.DELRQ);
-        this.filename = new String(data, StandardCharsets.UTF_8).substring(0, data.length - 1);
+        this.filename = filename;
     }
 
     public String getFilename() {
         return filename;
+    }
+
+    @Override
+    public byte[] toPacket() {
+        byte[] opcb = opCodeBytes();
+        byte[] filenameBytes = filename.getBytes();
+        byte[] output = new byte[filenameBytes.length + 3];
+        System.arraycopy(opcb, 0, output, 0, 2);
+        System.arraycopy(filenameBytes, 0, output, 2, filenameBytes.length);
+        output[output.length - 1] = '\0';
+
+        return output;
     }
 }
 
@@ -314,7 +385,20 @@ class BCAST extends TftpInstruction {
 
     public BCAST(byte[] data) {
         super(Opcode.BCAST);
-        throw new IllegalTFTPOperationException("Client should not send BCAST");
+
+        if (data.length < 2)
+            throw new IllegalTFTPOperationException("BCAST wrongly formatted");
+
+        byte addByte = data[0];
+        byte[] stringBytes = new byte[data.length - 4];
+        System.arraycopy(data, 3, stringBytes, 0, stringBytes.length);
+
+        if (addByte != 0 && addByte != 1)
+            throw new IllegalTFTPOperationException("BCAST wrongly formatted");
+
+        added = addByte == 1;
+        filename = new String(stringBytes, StandardCharsets.UTF_8);
+        // TODO change all toString() methods acting on byte[]
     }
 
     public boolean getAdded() {
@@ -327,15 +411,16 @@ class BCAST extends TftpInstruction {
 
     @Override
     public byte[] toPacket() {
+        byte[] opcb = opCodeBytes();
         byte[] fnBytes = filename.getBytes();
         byte[] output = new byte[fnBytes.length + 4];
 
-        byte[] starter = new byte[] { (byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff),
+        byte[] starter = new byte[] { opcb[0], opcb[1],
                 (byte) (added ? 1 : 0) };
 
         System.arraycopy(starter, 0, output, 0, 3);
         System.arraycopy(fnBytes, 0, output, 3, fnBytes.length);
-        output[output.length - 1] = 0;
+        output[output.length - 1] = '\0';
         return output;
     }
 }
@@ -347,5 +432,10 @@ class DISC extends TftpInstruction {
 
     public DISC(byte[] data) {
         this();
+    }
+
+    @Override
+    public byte[] toPacket() {
+        return opCodeBytes();
     }
 }

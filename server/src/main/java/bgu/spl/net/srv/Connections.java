@@ -9,11 +9,12 @@ public interface Connections<T> extends Iterable<ConnectionHandler<T>>, Closeabl
 
     void disconnect(int connectionId);
 
+    //AccessInterface<S> getAcessInterface(); // TODO forum thing
     boolean isUserLoggedIn(String username);
 
     boolean addUsername(String username, int connectionId);
 
-    boolean removeUsername(String username);
+    boolean removeUsername(String username); // TODO some generic problem here?
 
     String getUsername(int connectionId);
 
