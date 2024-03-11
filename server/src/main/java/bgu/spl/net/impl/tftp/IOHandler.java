@@ -10,6 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IOHandler {
+    private final static String PATH = System.getProperty("user.dir") + "/Files/";
     private IOHandlerMode mode;
     private String filename;
     private short blockNumber;
@@ -42,44 +43,51 @@ public class IOHandler {
         if (mode != IOHandlerMode.READ && mode != IOHandlerMode.DIR)
             throw new RuntimeException("reading in write/dirq mode");
 
-        byte[] output = new byte[512];
+        byte[] readData = new byte[512];
         int readSize = 0;
         if (mode == IOHandlerMode.DIR) {
-            readSize = dirqIn.read(output);
+            readSize = dirqIn.read(readData);
             if (readSize == 0) {
-                output[0] = 0;
+                readData[0] = 0;
                 readSize = 1;
             }
             if (readSize < 512)
                 ioDone = true;
         } else {
-            readSize = in.read(output);
+            readSize = in.read(readData);
             if (readSize == 0) {
-                output[0] = 0;
+                readData[0] = 0;
                 readSize = 1;
             }
             if (readSize < 512)
                 ioDone = true;
         }
 
-        System.arraycopy(output, 0, output, 0, readSize);
+        byte[] result = new byte[readSize];
+        System.arraycopy(readData, 0, result, 0, readSize);
         ++blockNumber;
-        return output;
+        return result;
     }
 
     public boolean fileExists() {
-        return new File(filename).isFile();
+        System.out.println(PATH + filename);
+        return new File(PATH + filename).isFile();
     }
 
     public void start() throws FileNotFoundException {
         if (mode == IOHandlerMode.DIR) {
-            String[] strArr = Stream.of(new File("").listFiles())
+            String[] strArr = Stream.of(new File(PATH).listFiles()) // TODO right directory
                     .filter(file -> !file.isDirectory())
                     .map(File::getName)
                     .map((String str) -> str.concat("\0"))
                     .collect(Collectors.toSet())
                     .toArray(new String[0]);
-            StringBuilder builder = new StringBuilder();
+                    // TODO test all packets with empty data
+
+            if (strArr.length == 0) {
+                strArr = new String[] {"Directory is empty"};
+            }
+            StringBuilder builder = new StringBuilder();  // TODO in client we need to read command input with spaces in filenames
 
             for (String str : strArr)
                 builder.append(str);
@@ -87,9 +95,9 @@ public class IOHandler {
 
             dirqIn = new ByteArrayInputStream(filenamesBytes);
         } else if (mode == IOHandlerMode.READ)
-            in = new FileInputStream(filename);
+            in = new FileInputStream(PATH + filename);
         else
-            out = new FileOutputStream(filename);
+            out = new FileOutputStream(PATH + filename);
 
         ioDone = false;
     }
@@ -125,7 +133,7 @@ public class IOHandler {
     }
 
     public boolean deleteFile() {
-        return new File(filename).delete();
+        return new File(PATH + filename).delete();
     }
 
     public enum IOHandlerMode {

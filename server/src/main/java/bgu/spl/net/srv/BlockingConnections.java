@@ -50,7 +50,7 @@ public class BlockingConnections implements Connections<TftpInstruction> {
 
     @Override
     public boolean removeUsername(String username) {
-        if (isUserLoggedIn(username))
+        if (!isUserLoggedIn(username))
             return false;
 
         usernames.remove(username);

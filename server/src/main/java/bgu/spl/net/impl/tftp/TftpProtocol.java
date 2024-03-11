@@ -18,6 +18,7 @@ public class TftpProtocol implements BidiMessagingProtocol<TftpInstruction> {
 
     @Override
     public void process(TftpInstruction instruction) {
+        System.out.println(instruction.toString()); // TODO remove
         TftpProtocolStateMachine.execute(instruction);
     }
 

@@ -74,6 +74,11 @@ public abstract class TftpInstruction implements java.io.Serializable {
     public byte[] toPacket() {
         return new byte[0];
     }
+
+    @Override
+    public String toString(){
+        return this.opcode.toString();
+    }
 }
 
 class RRQ extends TftpInstruction {
@@ -143,6 +148,8 @@ class DATA extends TftpInstruction {
     }
 
     public static DATA buildData(byte[] dataToSend, short blockNumber) {
+        
+
         byte[] tmpBytes = new byte[]{(byte) (dataToSend.length >> 8), (byte) (dataToSend.length & 0xff),
                 (byte) (blockNumber >> 8), (byte) (blockNumber & 0xff)};
 
@@ -197,6 +204,7 @@ class ACK extends TftpInstruction {
         return new byte[]{(byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff), (byte) (blockNumber >> 8),
                 (byte) (blockNumber & 0xff)};
     }
+
 }
 
 class ERROR extends TftpInstruction {
