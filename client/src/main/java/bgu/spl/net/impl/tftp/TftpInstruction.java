@@ -75,6 +75,11 @@ public abstract class TftpInstruction implements java.io.Serializable {
     public byte[] opCodeBytes() {
         return new byte[]{(byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff)};
     }
+
+    @Override
+    public String toString(){
+        return this.opcode.toString();
+    }
 }
 
 class RRQ extends TftpInstruction {
@@ -390,8 +395,8 @@ class BCAST extends TftpInstruction {
             throw new IllegalTFTPOperationException("BCAST wrongly formatted");
 
         byte addByte = data[0];
-        byte[] stringBytes = new byte[data.length - 4];
-        System.arraycopy(data, 3, stringBytes, 0, stringBytes.length);
+        byte[] stringBytes = new byte[data.length - 1];
+        System.arraycopy(data, 1, stringBytes, 0, stringBytes.length);
 
         if (addByte != 0 && addByte != 1)
             throw new IllegalTFTPOperationException("BCAST wrongly formatted");

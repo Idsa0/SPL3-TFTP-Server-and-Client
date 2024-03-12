@@ -18,27 +18,28 @@ public class KeyboardListener implements Runnable {
         TftpInstruction userInput;
         while (!shouldTerminate) {
             userInput = parseArgs(s.nextLine().split(" ")); // TODO test split(" ")
-            process(userInput);
             if (userInput == null)
                 System.out.println("Invalid instruction - please read manual");
             else {
-                TftpInstruction result = listener.processUserInputAndWait(userInput);
-                endProcess(userInput, result);
+                listener.processUserInputAndWait(userInput);
+                endProcess(userInput);
             }
         }
 
         s.close();
-        listener.terminate();
+        try {
+            listener.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
     }
 
-    private void endProcess(TftpInstruction userInput, TftpInstruction result) {
+    private void endProcess(TftpInstruction userInput) {
         if (userInput.opcode == Opcode.DISC)
             shouldTerminate = true;
     }
 
-    private void process(TftpInstruction userInput) { // TODO
-        return; // currently handled by the listener thread.
-    }
+    
 
     public boolean shouldTerminate() {
         return shouldTerminate;
@@ -48,35 +49,39 @@ public class KeyboardListener implements Runnable {
         if (args.length > 2)
             return null;
 
-        Opcode opcode = TftpInstruction.Opcode.valueOf(args[0]);
+        try {
+            Opcode opcode = TftpInstruction.Opcode.valueOf(args[0]);
 
-        switch (opcode) {
-            case DELRQ:
-                if (args.length != 2)
+            switch (opcode) {
+                case DELRQ:
+                    if (args.length != 2)
+                        return null;
+                    return new DELRQ(args[1]);
+                case DIRQ:
+                    if (args.length != 1)
+                        return null;
+                    return new DIRQ();
+                case DISC:
+                    if (args.length != 1)
+                        return null;
+                    return new DISC();
+                case LOGRQ:
+                    if (args.length != 2)
+                        return null;
+                    return new LOGRQ(args[1]);
+                case RRQ:
+                    if (args.length != 2)
+                        return null;
+                    return new RRQ(args[1]);
+                case WRQ:
+                    if (args.length != 2)
+                        return null;
+                    return new WRQ(args[1]);
+                default:
                     return null;
-                return new DELRQ(args[1]);
-            case DIRQ:
-                if (args.length != 1)
-                    return null;
-                return new DIRQ();
-            case DISC:
-                if (args.length != 1)
-                    return null;
-                return new DISC();
-            case LOGRQ:
-                if (args.length != 2)
-                    return null;
-                return new LOGRQ(args[1]);
-            case RRQ:
-                if (args.length != 2)
-                    return null;
-                return new RRQ(args[1]);
-            case WRQ:
-                if (args.length != 2)
-                    return null;
-                return new WRQ(args[1]);
-            default:
-                return null;
+            }
+        } catch (IllegalArgumentException noSuchOp) {
+            return null;
         }
     }
 }

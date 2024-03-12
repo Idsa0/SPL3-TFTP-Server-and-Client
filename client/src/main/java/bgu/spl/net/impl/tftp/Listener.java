@@ -47,16 +47,19 @@ public class Listener implements Runnable, Closeable, ClientListener {
                     // from changing us.
                     protocol.process(nextMessage);
             }
-            close();
         } catch (IOException ex) {
-            ex.printStackTrace();
+            System.out.println(ex.getCause());
         }
     }
 
     @Override
     public synchronized void close() throws IOException {
         connected = false;
+        
         sock.close();
+        
+        
+        // TODO: anything else to close?
     }
 
     @Override
@@ -69,13 +72,9 @@ public class Listener implements Runnable, Closeable, ClientListener {
         }
     }
 
-    public TftpInstruction processUserInputAndWait(TftpInstruction userInput) {
-        return protocol.startStateAndWait(userInput);
+    public void processUserInputAndWait(TftpInstruction userInput) {
+        protocol.startStateAndWait(userInput);
     }
 
-    public void terminate() {
-        protocol.terminate();
-        // TODO Auto-generated method stub
-        throw new UnsupportedOperationException("Unimplemented method 'terminate'");
-    }
+  
 }

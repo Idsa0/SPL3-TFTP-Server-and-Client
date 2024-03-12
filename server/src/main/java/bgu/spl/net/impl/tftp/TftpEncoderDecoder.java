@@ -37,7 +37,7 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<TftpInstruction
                 if (len == 4) {
                     bitsLeft = (short) (((bytes[2] & 0xff) << 8) | (bytes[3] & 0xff));
                     bitsLeft += 2; // for the blockNumber
-                } else {
+                } else if (len > 4) {
                     --bitsLeft;
                     if (bitsLeft <= 0)
                         return getInstructionAndReset();

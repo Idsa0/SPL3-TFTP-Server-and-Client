@@ -13,6 +13,7 @@ public class TftpClientProtocol implements BidiMessagingProtocol<TftpInstruction
 
     @Override
     public void process(TftpInstruction message) {
+        
         tftpProtocolStateMachine.execute(message);
     }
 
@@ -21,8 +22,8 @@ public class TftpClientProtocol implements BidiMessagingProtocol<TftpInstruction
         return shouldTerminate;
     }
 
-    public TftpInstruction startStateAndWait(TftpInstruction userInput) {
-        return tftpProtocolStateMachine.startStateAndWait(userInput);
+    public void startStateAndWait(TftpInstruction userInput) {
+        tftpProtocolStateMachine.startStateAndWait(userInput);
     }
 
     public void terminate() {

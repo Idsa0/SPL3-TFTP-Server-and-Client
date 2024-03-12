@@ -29,7 +29,10 @@ public class TftpProtocolStateMachine {
             return;
         }
         if (instruction.opcode == TftpInstruction.Opcode.DISC) {
-            connections.send(connectionId, new ACK((short) 0));
+            if (currentState == State.NOT_LOGGED_IN)
+                connections.send(connectionId, new ERROR(ErrorCode.USER_NOT_LOGGED_IN, "You're not even on!"));
+            else
+                connections.send(connectionId, new ACK((short) 0));
             terminate();
             return;
         }
@@ -102,6 +105,7 @@ public class TftpProtocolStateMachine {
                     new ERROR(ERROR.ErrorCode.USER_ALREADY_LOGGED_IN, "Another client is using this log in name"));
         } else {
             connections.addUsername(username, connectionId);
+            currentState = State.LOGGED_IN;
             connections.send(connectionId, new ACK((short) 0));
         }
     }
@@ -115,41 +119,50 @@ public class TftpProtocolStateMachine {
         } catch (FileNotFoundException e) {
             connections.send(connectionId, new ERROR(ERROR.ErrorCode.FILE_NOT_FOUND, "No such file"));
             endDataTransfer();
+            return;
         }
 
         currentState = State.RRQ;
         try {
+            short tmpBlockNum = ioHandler.getBlockNumber() ;
             connections.send(connectionId,
-                    DATA.buildData(ioHandler.readNext(), (short) (ioHandler.getBlockNumber() - 1)));
+                    DATA.buildData(ioHandler.readNext(), tmpBlockNum));
         } catch (IOException e) {
             connections.send(connectionId, new ERROR(ERROR.ErrorCode.ACCESS_VIOLATION, "IO error"));
         }
 
-        if (ioHandler.isIODone())
-            endDataTransfer();
+        
     }
 
     private void continueRRQ(TftpInstruction instruction) {
         if (instruction.opcode == TftpInstruction.Opcode.ACK) {
-            if (((ACK) instruction).getBlockNumber() == ioHandler.getBlockNumber())
-                try {
+            if (!ioHandler.isIODone()){
+                if (((ACK) instruction).getBlockNumber() == ioHandler.getBlockNumber() - 1)
+                    try {
+                        short tmpBlockNum = ioHandler.getBlockNumber() ;
+                        connections.send(connectionId,
+                                DATA.buildData(ioHandler.readNext(), tmpBlockNum));
+                    } catch (IOException e) {
+                        connections.send(connectionId, new ERROR(ERROR.ErrorCode.ACCESS_VIOLATION, "IO error"));
+                        endDataTransfer();
+                        return;
+                    }
+                else {
                     connections.send(connectionId,
-                            DATA.buildData(ioHandler.readNext(), (short) (ioHandler.getBlockNumber() - 1)));
-                } catch (IOException e) {
-                    connections.send(connectionId, new ERROR(ERROR.ErrorCode.ACCESS_VIOLATION, "IO error"));
-                    endDataTransfer();
+                            new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
+                    endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
+                    // and wait for the right package?
                 }
-            else {
-                connections.send(connectionId,
-                        new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-                endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                // and wait for the right package?
+            } else {
+                endDataTransfer();
+                return;
             }
         } else {
             connections.send(connectionId,
                     new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
             endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
             // and wait for the right package?
+            return;
         }
     }
 
@@ -158,14 +171,18 @@ public class TftpProtocolStateMachine {
 
         ioHandler = new IOHandler(instruction.getFilename(), IOHandlerMode.WRITE);
 
-        if (!ioHandler.fileExists()) {
+        if (ioHandler.fileExists()) {
             connections.send(connectionId,
                     new ERROR(ERROR.ErrorCode.FILE_ALREADY_EXISTS, "File Already exists!"));
             endDataTransfer();
+            return;
         }
         try {
             ioHandler.start();
         } catch (Exception ignored) {
+            connections.send(connectionId, new ERROR(ErrorCode.NOT_DEFINED, "IO error"));
+            endDataTransfer();
+            return;
         }
 
         connections.send(connectionId, new ACK((short) 0));
@@ -176,22 +193,27 @@ public class TftpProtocolStateMachine {
             DATA dInstruction = (DATA) instruction;
             if (dInstruction.getBlockNumber() == ioHandler.getBlockNumber()) {
                 try {
+                    short tmpBlockNum = ioHandler.getBlockNumber() ;
                     ioHandler.writeNext(dInstruction.getData());
-                    connections.send(connectionId, new ACK((short) (ioHandler.getBlockNumber() - 1)));
+
+                    connections.send(connectionId, new ACK(tmpBlockNum));
                 } catch (IOException e) {
                     connections.send(connectionId, new ERROR(ERROR.ErrorCode.ACCESS_VIOLATION, "IO error"));
                     endDataTransfer();
+                    return;
                 }
             } else {
                 connections.send(connectionId,
                         new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting DATA " + ioHandler.getBlockNumber()));
                 endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
                 // and wait for the right package?
+                return;
             }
         } else {
             connections.send(connectionId,
                     new ERROR(ErrorCode.NOT_DEFINED, "Expecting DATA" + ioHandler.getBlockNumber()));
             endDataTransfer();
+            return;
         }
 
         if (ioHandler.isIODone()) {
@@ -206,8 +228,9 @@ public class TftpProtocolStateMachine {
         ioHandler = new IOHandler(IOHandlerMode.DIR);
         try {
             ioHandler.start();
+            short tmpBlockNum = ioHandler.getBlockNumber() ;
             connections.send(connectionId,
-                    DATA.buildData(ioHandler.readNext(), (short) (ioHandler.getBlockNumber() - 1)));
+                    DATA.buildData(ioHandler.readNext(), tmpBlockNum));
         } catch (FileNotFoundException ignored) {
         } catch (IOException e) {
             connections.send(connectionId, new ERROR(ERROR.ErrorCode.ACCESS_VIOLATION, "IO error"));
@@ -216,20 +239,28 @@ public class TftpProtocolStateMachine {
 
     private void continueDIRQ(TftpInstruction instruction) {
         if (instruction.opcode == TftpInstruction.Opcode.ACK) {
-            if (((ACK) instruction).getBlockNumber() == ioHandler.getBlockNumber())
-                try {
-                    connections.send(connectionId,
-                            DATA.buildData(ioHandler.readNext(), (short) (ioHandler.getBlockNumber() - 1)));
-                } catch (IOException e) {
-                    connections.send(connectionId, new ERROR(ERROR.ErrorCode.ACCESS_VIOLATION, "IO error"));
-                    endDataTransfer();
-                }
+            if (!ioHandler.isIODone()){
+                if (((ACK) instruction).getBlockNumber() == ioHandler.getBlockNumber() - 1)
+                    try {
+                        short tmpBlockNum = ioHandler.getBlockNumber() ;
+                        connections.send(connectionId, DATA.buildData(ioHandler.readNext(), tmpBlockNum));
+                    } catch (IOException e) {
+                        connections.send(connectionId, new ERROR(ERROR.ErrorCode.ACCESS_VIOLATION, "IO error"));
+                        endDataTransfer();
+                        return;
+                    }
 
+                else {
+                    connections.send(connectionId,
+                            new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
+                    endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
+                    // and wait for the right package?
+                    return;
+                }
+            }
             else {
-                connections.send(connectionId,
-                        new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-                endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                // and wait for the right package?
+                endDataTransfer();
+                return;
             }
         } else {
             connections.send(connectionId,
