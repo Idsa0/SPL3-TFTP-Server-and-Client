@@ -186,7 +186,7 @@ public class TftpProtocolStateMachine implements Closeable {
 
     private void printOutBCAST(BCAST instruction) {
         System.out.println(
-                "> BCAST " + (instruction.getAdded() ? "add" : "del") + ": \"" + instruction.getFilename() + "\"");
+                "> BCAST " + (instruction.getAdded() ? "add" : "del") + " \"" + instruction.getFilename() + "\"");
     }
 
     private enum State {

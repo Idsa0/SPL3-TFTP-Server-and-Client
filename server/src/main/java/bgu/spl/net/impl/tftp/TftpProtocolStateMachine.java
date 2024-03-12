@@ -30,7 +30,7 @@ public class TftpProtocolStateMachine {
         }
         if (instruction.opcode == TftpInstruction.Opcode.DISC) {
             if (currentState == State.NOT_LOGGED_IN)
-                connections.send(connectionId, new ERROR(ErrorCode.USER_NOT_LOGGED_IN, "You're not even on!"));
+                connections.send(connectionId, new ERROR(ErrorCode.USER_NOT_LOGGED_IN, "you're not even on!"));
             else
                 connections.send(connectionId, new ACK((short) 0));
             terminate();
@@ -43,7 +43,7 @@ public class TftpProtocolStateMachine {
                     logIn((LOGRQ) instruction);
                 } else {
                     connections.send(connectionId,
-                            new ERROR(ERROR.ErrorCode.USER_NOT_LOGGED_IN, "User not Logged in"));
+                            new ERROR(ERROR.ErrorCode.USER_NOT_LOGGED_IN, "user not Logged in"));
                 }
                 break;
 
@@ -58,10 +58,10 @@ public class TftpProtocolStateMachine {
                     deleteFileAndRespond((DELRQ) instruction);
                 else if (instruction.opcode == TftpInstruction.Opcode.LOGRQ)
                     connections.send(connectionId,
-                            new ERROR(ERROR.ErrorCode.USER_ALREADY_LOGGED_IN, "User already logged in"));
+                            new ERROR(ERROR.ErrorCode.USER_ALREADY_LOGGED_IN, "user already logged in"));
                 else
                     connections.send(connectionId,
-                            new ERROR(ERROR.ErrorCode.NOT_DEFINED, "Illegal request at current state"));
+                            new ERROR(ERROR.ErrorCode.NOT_DEFINED, "illegal request at current state"));
                 break;
 
             case RRQ:
@@ -77,7 +77,7 @@ public class TftpProtocolStateMachine {
                 break;
 
             case END:
-                connections.send(connectionId, new ERROR(ERROR.ErrorCode.NOT_DEFINED, "Protocol is done"));
+                connections.send(connectionId, new ERROR(ERROR.ErrorCode.NOT_DEFINED, "protocol is done"));
                 terminate();
                 break;
         }
@@ -87,7 +87,7 @@ public class TftpProtocolStateMachine {
         String fileName = instruction.getFilename();
         ioHandler = new IOHandler(fileName, IOHandlerMode.DELETE);
         if (!ioHandler.fileExists())
-            connections.send(connectionId, new ERROR(ERROR.ErrorCode.FILE_NOT_FOUND, "No such file"));
+            connections.send(connectionId, new ERROR(ERROR.ErrorCode.FILE_NOT_FOUND, "no such file"));
         else {
             if (ioHandler.deleteFile()) {
                 connections.send(connectionId, new ACK((short) 0));
@@ -102,7 +102,7 @@ public class TftpProtocolStateMachine {
         String username = instruction.getUsername();
         if (connections.isUserLoggedIn(username)) {
             connections.send(connectionId,
-                    new ERROR(ERROR.ErrorCode.USER_ALREADY_LOGGED_IN, "Another client is using this log in name"));
+                    new ERROR(ERROR.ErrorCode.USER_ALREADY_LOGGED_IN, "another client is using this log in name"));
         } else {
             connections.addUsername(username, connectionId);
             currentState = State.LOGGED_IN;
@@ -116,7 +116,7 @@ public class TftpProtocolStateMachine {
         try {
             ioHandler.start();
         } catch (FileNotFoundException e) {
-            connections.send(connectionId, new ERROR(ERROR.ErrorCode.FILE_NOT_FOUND, "No such file"));
+            connections.send(connectionId, new ERROR(ERROR.ErrorCode.FILE_NOT_FOUND, "no such file"));
             endDataTransfer();
             return;
         }
@@ -168,7 +168,7 @@ public class TftpProtocolStateMachine {
 
         if (ioHandler.fileExists()) {
             connections.send(connectionId,
-                    new ERROR(ERROR.ErrorCode.FILE_ALREADY_EXISTS, "File Already exists!"));
+                    new ERROR(ERROR.ErrorCode.FILE_ALREADY_EXISTS, "file already exists!"));
             endDataTransfer();
             return;
         }
@@ -208,7 +208,7 @@ public class TftpProtocolStateMachine {
         } else {
             ioHandler.deleteFile();
             connections.send(connectionId,
-                    new ERROR(ErrorCode.NOT_DEFINED, "Expecting DATA" + ioHandler.getBlockNumber()));
+                    new ERROR(ErrorCode.NOT_DEFINED, "expecting DATA" + ioHandler.getBlockNumber()));
             endDataTransfer();
             return;
         }
