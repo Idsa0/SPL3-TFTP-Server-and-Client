@@ -15,8 +15,6 @@ public class KeyboardListener implements Runnable {
     }
 
     public void run() {
-
-
         Scanner s = new Scanner(System.in);
         TftpInstruction userInput;
         while (!shouldTerminate) {
@@ -39,16 +37,12 @@ public class KeyboardListener implements Runnable {
     private void endProcess(TftpInstruction userInput) {
         if (userInput.opcode == Opcode.DISC)
             shouldTerminate = true;
-    }  
-
-    public boolean shouldTerminate() {
-        return shouldTerminate;
     }
 
     private TftpInstruction parseArgs(String[] args) {
         String name = "";
-        if (args.length > 2){
-            String[] tmpArr = new String[args.length-1];
+        if (args.length > 2) {
+            String[] tmpArr = new String[args.length - 1];
             System.arraycopy(args, 1, tmpArr, 0, args.length - 1);
             name = String.join(" ", tmpArr);
         } else if (args.length == 2)

@@ -6,20 +6,20 @@ import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IOHandler {
     private final String PATH;
 
-    private IOHandlerMode mode;
+    private final IOHandlerMode mode;
     private String filename;
     private short blockNumber;
     private FileOutputStream out = null;
     private FileInputStream in = null;
     private ByteArrayInputStream dirqIn = null;
     private boolean ioDone = false;
-    private byte[] filenamesBytes;
 
     public IOHandler(IOHandlerMode mode) {
         this.mode = mode;
@@ -50,24 +50,18 @@ public class IOHandler {
             throw new RuntimeException("reading in write/dirq mode");
 
         byte[] readData = new byte[512];
-        int readSize = 0;
+        int readSize;
         if (mode == IOHandlerMode.DIR) {
             readSize = dirqIn.read(readData);
-            if (readSize <= 0) {
-                readData[0] = 0;
-                readSize = 1;
-            }
-            if (readSize < 512)
-                ioDone = true;
         } else {
             readSize = in.read(readData);
-            if (readSize <= 0) {
-                readData[0] = 0;
-                readSize = 1;
-            }
-            if (readSize < 512)
-                ioDone = true;
         }
+        if (readSize <= 0) {
+            readData[0] = 0;
+            readSize = 1;
+        }
+        if (readSize < 512)
+            ioDone = true;
 
         byte[] result = new byte[readSize];
         System.arraycopy(readData, 0, result, 0, readSize);
@@ -81,17 +75,17 @@ public class IOHandler {
 
     public void start() throws FileNotFoundException {
         if (mode == IOHandlerMode.DIR) {
-            String[] strArr = Stream.of(new File(PATH).listFiles())
+            String[] strArr = Stream.of(Objects.requireNonNull(new File(PATH).listFiles()))
                     .filter(file -> !file.isDirectory())
                     .map(File::getName)
                     .map((String str) -> str.concat("\0"))
-                    .collect(Collectors.toSet())
-                    .toArray(new String[0]);
+                    .distinct()
+                    .toArray(String[]::new);
             StringBuilder builder = new StringBuilder();
 
             for (String str : strArr)
                 builder.append(str);
-            filenamesBytes = builder.toString().getBytes();
+            byte[] filenamesBytes = builder.toString().getBytes();
 
             dirqIn = new ByteArrayInputStream(filenamesBytes);
         } else if (mode == IOHandlerMode.READ) {
@@ -123,7 +117,7 @@ public class IOHandler {
             throw new RuntimeException("trying to write in read mode");
 
         if (out == null)
-            throw new RuntimeException("outputstream did not open yet");
+            throw new RuntimeException("OutputStream did not open yet");
 
         if (data.length < 512)
             ioDone = true;

@@ -17,12 +17,12 @@ public interface Server<T> extends Closeable {
      * This function returns a new instance of a thread per client pattern server
      *
      * @param port                  The port for the server socket
-     * @param protocolFactory       A factory that creats new MessagingProtocols
-     * @param encoderDecoderFactory A factory that creats new MessageEncoderDecoder
+     * @param protocolFactory       A factory that creates new MessagingProtocols
+     * @param encoderDecoderFactory A factory that creates new MessageEncoderDecoder
      * @param <T>                   The Message Object for the protocol
      * @return A new Thread per client server
      */
-    public static <T> Server<T> threadPerClient(
+    static <T> Server<T> threadPerClient(
             int port,
             Supplier<BidiMessagingProtocol<T>> protocolFactory,
             Supplier<MessageEncoderDecoder<T>> encoderDecoderFactory,

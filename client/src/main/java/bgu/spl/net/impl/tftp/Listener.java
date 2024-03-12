@@ -66,6 +66,4 @@ public class Listener implements Runnable, Closeable, ClientListener {
     public void processUserInputAndWait(TftpInstruction userInput) {
         protocol.startStateAndWait(userInput);
     }
-
-    
 }

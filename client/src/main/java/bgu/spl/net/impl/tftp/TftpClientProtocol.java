@@ -6,7 +6,7 @@ import bgu.spl.net.api.BidiMessagingProtocol;
 
 public class TftpClientProtocol implements BidiMessagingProtocol<TftpInstruction> {
 
-    private TftpProtocolStateMachine tftpProtocolStateMachine = new TftpProtocolStateMachine();
+    private final TftpProtocolStateMachine tftpProtocolStateMachine = new TftpProtocolStateMachine();
     private boolean shouldTerminate = false;
 
     public void addListener(ClientListener listener) {
@@ -15,7 +15,6 @@ public class TftpClientProtocol implements BidiMessagingProtocol<TftpInstruction
 
     @Override
     public void process(TftpInstruction message) {
-
         tftpProtocolStateMachine.execute(message);
     }
 

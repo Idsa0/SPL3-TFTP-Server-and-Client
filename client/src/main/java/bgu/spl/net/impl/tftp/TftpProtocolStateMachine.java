@@ -18,7 +18,7 @@ public class TftpProtocolStateMachine implements Closeable {
     private volatile boolean userInputLockFlag = false;
     private short blockNumberExpected = 1;
     private ClientListener listener = null;
-    private Queue<Byte> directoryListBuffer = new ArrayDeque<>();
+    private final Queue<Byte> directoryListBuffer = new ArrayDeque<>();
 
     public TftpProtocolStateMachine() {
         this.currentState = State.DEFAULT;
@@ -86,7 +86,7 @@ public class TftpProtocolStateMachine implements Closeable {
                 if (instruction.getPacketSize() < 512) {
                     StringBuilder sb = new StringBuilder();
                     for (byte b : directoryListBuffer)
-                        sb.append(new String(new byte[] { b }, StandardCharsets.UTF_8));
+                        sb.append(new String(new byte[]{b}, StandardCharsets.UTF_8));
 
                     String[] fileList = sb.toString().split("\0");
                     for (String filename : fileList)
@@ -160,7 +160,7 @@ public class TftpProtocolStateMachine implements Closeable {
                     dataInstruction = DATA.buildData(ioHandler.readNext(), blockNumberExpected);
                 } catch (IOException e) {
                     System.out.println("> IO error on client side");
-                    dataInstruction = DATA.buildData(new byte[] { 0, 0, 0, 0 }, blockNumberExpected);
+                    dataInstruction = DATA.buildData(new byte[]{0, 0, 0, 0}, blockNumberExpected);
                     ioHandler.IODone();
                 }
 
@@ -198,30 +198,25 @@ public class TftpProtocolStateMachine implements Closeable {
             throw new RuntimeException("client is attempting something illegal");
 
         if (startState(userInput)) {
-
             synchronized (userInputLock) {
                 try {
                     userInputLockFlag = true;
                     userInputLock.notifyAll();
-                    ;
                     userInputLock.wait();
-                } catch (InterruptedException e) {
-                    return;
+                } catch (InterruptedException ignored) {
                 }
             }
         }
     }
 
     /**
-     * returns false if there is no packet to send, i.e. the job is cancelled.
      * Performs the start of the job otherwise and then sends appropriate packet.
-     * 
-     * @param userInput
-     * @return
+     *
+     * @param userInput the user input
+     * @return false if there is no packet to send, i.e. the job is cancelled.
      */
 
     private boolean startState(TftpInstruction userInput) {
-
         currentInstruction = userInput;
 
         switch (userInput.opcode) {

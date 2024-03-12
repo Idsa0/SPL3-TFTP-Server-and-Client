@@ -77,7 +77,7 @@ public abstract class TftpInstruction implements java.io.Serializable {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return this.opcode.toString();
     }
 }
@@ -156,7 +156,7 @@ class DATA extends TftpInstruction {
         if (data.length != packetSize + 4)
             throw new IllegalTFTPOperationException("Wrong packet Size as data");
 
-        if (packetSize < 0 || packetSize > 512)
+        if (packetSize > 512)
             throw new IllegalTFTPOperationException("Invalid packet size");
 
         this.blockNumber = (short) ((data[2] << 8) | (data[3] & 0xff));
@@ -255,7 +255,7 @@ class ERROR extends TftpInstruction {
 
         this.errorCode = ErrorCode.values()[ec];
 
-        
+
         this.errorMsg = new String(data, 2, data.length - 2, StandardCharsets.UTF_8);
     }
 
@@ -293,7 +293,7 @@ class ERROR extends TftpInstruction {
         FILE_ALREADY_EXISTS(5),
         USER_NOT_LOGGED_IN(6), USER_ALREADY_LOGGED_IN(7);
 
-        private int value;
+        private final int value;
 
         ErrorCode(int value) {
             this.value = value;
@@ -327,6 +327,7 @@ class LOGRQ extends TftpInstruction {
     public LOGRQ(byte[] data) {
         this(new String(data, StandardCharsets.UTF_8).substring(0, data.length - 1));
     }
+
     public LOGRQ(String username) {
         super(Opcode.LOGRQ);
         this.username = username;

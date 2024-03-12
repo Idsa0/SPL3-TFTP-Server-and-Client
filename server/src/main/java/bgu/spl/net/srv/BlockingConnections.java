@@ -8,8 +8,8 @@ import java.util.concurrent.ConcurrentMap;
 import bgu.spl.net.impl.tftp.TftpInstruction;
 
 public class BlockingConnections implements Connections<TftpInstruction> {
-    private ConcurrentMap<Integer, ConnectionHandler<TftpInstruction>> handlers = new ConcurrentHashMap<Integer, ConnectionHandler<TftpInstruction>>();
-    private ConcurrentMap<String, Integer> usernames = new ConcurrentHashMap<>();
+    private final ConcurrentMap<Integer, ConnectionHandler<TftpInstruction>> handlers = new ConcurrentHashMap<>();
+    private final ConcurrentMap<String, Integer> usernames = new ConcurrentHashMap<>();
     private int nextId = 0;
 
     @Override

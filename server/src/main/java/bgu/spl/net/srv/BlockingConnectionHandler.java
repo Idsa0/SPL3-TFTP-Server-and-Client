@@ -2,6 +2,7 @@ package bgu.spl.net.srv;
 
 import bgu.spl.net.api.BidiMessagingProtocol;
 import bgu.spl.net.api.MessageEncoderDecoder;
+
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.IOException;
@@ -18,7 +19,7 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
     private final int connectionID;
 
     public BlockingConnectionHandler(Socket sock, MessageEncoderDecoder<T> reader, BidiMessagingProtocol<T> protocol,
-            Connections<T> connections) {
+                                     Connections<T> connections) {
         this.sock = sock;
         this.encdec = reader;
         this.protocol = protocol;

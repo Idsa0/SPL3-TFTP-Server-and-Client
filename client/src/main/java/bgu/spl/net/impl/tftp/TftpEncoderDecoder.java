@@ -52,10 +52,6 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<TftpInstruction
         return null;
     }
 
-    public boolean isInPacketIO() {
-        return len > 0;
-    }
-
     private TftpInstruction getInstructionAndReset() {
         int tmp = len;
         len = 0;

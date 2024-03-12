@@ -123,22 +123,20 @@ public class TftpProtocolStateMachine {
 
         currentState = State.RRQ;
         try {
-            short tmpBlockNum = ioHandler.getBlockNumber() ;
+            short tmpBlockNum = ioHandler.getBlockNumber();
             connections.send(connectionId,
                     DATA.buildData(ioHandler.readNext(), tmpBlockNum));
         } catch (IOException e) {
             connections.send(connectionId, new ERROR(ERROR.ErrorCode.ACCESS_VIOLATION, "IO error"));
         }
-
-        
     }
 
     private void continueRRQ(TftpInstruction instruction) {
         if (instruction.opcode == TftpInstruction.Opcode.ACK) {
-            if (!ioHandler.isIODone()){
+            if (!ioHandler.isIODone()) {
                 if (((ACK) instruction).getBlockNumber() == ioHandler.getBlockNumber() - 1)
                     try {
-                        short tmpBlockNum = ioHandler.getBlockNumber() ;
+                        short tmpBlockNum = ioHandler.getBlockNumber();
                         connections.send(connectionId,
                                 DATA.buildData(ioHandler.readNext(), tmpBlockNum));
                     } catch (IOException e) {
@@ -149,7 +147,7 @@ public class TftpProtocolStateMachine {
                 else {
                     connections.send(connectionId,
                             new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-                    endDataTransfer(); 
+                    endDataTransfer();
                 }
             } else {
                 endDataTransfer();
@@ -158,7 +156,7 @@ public class TftpProtocolStateMachine {
         } else {
             connections.send(connectionId,
                     new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-            endDataTransfer(); 
+            endDataTransfer();
             return;
         }
     }
@@ -190,7 +188,7 @@ public class TftpProtocolStateMachine {
             DATA dInstruction = (DATA) instruction;
             if (dInstruction.getBlockNumber() == ioHandler.getBlockNumber()) {
                 try {
-                    short tmpBlockNum = ioHandler.getBlockNumber() ;
+                    short tmpBlockNum = ioHandler.getBlockNumber();
                     ioHandler.writeNext(dInstruction.getData());
 
                     connections.send(connectionId, new ACK(tmpBlockNum));
@@ -203,7 +201,7 @@ public class TftpProtocolStateMachine {
                 ioHandler.deleteFile();
                 connections.send(connectionId,
                         new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting DATA " + ioHandler.getBlockNumber()));
-                endDataTransfer(); 
+                endDataTransfer();
                 return;
 
             }
@@ -227,7 +225,7 @@ public class TftpProtocolStateMachine {
         ioHandler = new IOHandler(IOHandlerMode.DIR);
         try {
             ioHandler.start();
-            short tmpBlockNum = ioHandler.getBlockNumber() ;
+            short tmpBlockNum = ioHandler.getBlockNumber();
             connections.send(connectionId,
                     DATA.buildData(ioHandler.readNext(), tmpBlockNum));
         } catch (FileNotFoundException ignored) {
@@ -238,10 +236,10 @@ public class TftpProtocolStateMachine {
 
     private void continueDIRQ(TftpInstruction instruction) {
         if (instruction.opcode == TftpInstruction.Opcode.ACK) {
-            if (!ioHandler.isIODone()){
+            if (!ioHandler.isIODone()) {
                 if (((ACK) instruction).getBlockNumber() == ioHandler.getBlockNumber() - 1)
                     try {
-                        short tmpBlockNum = ioHandler.getBlockNumber() ;
+                        short tmpBlockNum = ioHandler.getBlockNumber();
                         connections.send(connectionId, DATA.buildData(ioHandler.readNext(), tmpBlockNum));
                     } catch (IOException e) {
                         connections.send(connectionId, new ERROR(ERROR.ErrorCode.ACCESS_VIOLATION, "IO error"));
@@ -252,18 +250,17 @@ public class TftpProtocolStateMachine {
                 else {
                     connections.send(connectionId,
                             new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-                    endDataTransfer(); 
+                    endDataTransfer();
                     return;
                 }
-            }
-            else {
+            } else {
                 endDataTransfer();
                 return;
             }
         } else {
             connections.send(connectionId,
                     new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-            endDataTransfer(); 
+            endDataTransfer();
         }
     }
 

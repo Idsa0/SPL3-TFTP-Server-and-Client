@@ -34,7 +34,6 @@ public abstract class TftpInstruction implements java.io.Serializable {
         System.arraycopy(bytes, 0, opcode, 0, 2);
 
         return parse(opcode, data);
-        // TODO beautify
     }
 
     public static TftpInstruction parse(byte[] bytes, byte[] data) {
@@ -76,7 +75,7 @@ public abstract class TftpInstruction implements java.io.Serializable {
     }
 
     @Override
-    public String toString(){
+    public String toString() {
         return this.opcode.toString();
     }
 }
@@ -123,7 +122,7 @@ class DATA extends TftpInstruction {
         if (data.length != packetSize + 4)
             throw new IllegalTFTPOperationException("Wrong packet Size as data");
 
-        if (packetSize < 0 || packetSize > 512)
+        if (packetSize > 512)
             throw new IllegalTFTPOperationException("Invalid packet size");
 
         this.blockNumber = (short) ((data[2] << 8) | (data[3] & 0xff));
@@ -148,7 +147,7 @@ class DATA extends TftpInstruction {
     }
 
     public static DATA buildData(byte[] dataToSend, short blockNumber) {
-        
+
 
         byte[] tmpBytes = new byte[]{(byte) (dataToSend.length >> 8), (byte) (dataToSend.length & 0xff),
                 (byte) (blockNumber >> 8), (byte) (blockNumber & 0xff)};
@@ -204,7 +203,6 @@ class ACK extends TftpInstruction {
         return new byte[]{(byte) (opcode.value() >> 8), (byte) (opcode.value() & 0xff), (byte) (blockNumber >> 8),
                 (byte) (blockNumber & 0xff)};
     }
-
 }
 
 class ERROR extends TftpInstruction {
@@ -215,7 +213,7 @@ class ERROR extends TftpInstruction {
         super(Opcode.ERROR);
 
         if (data.length < 3)
-            throw new IllegalTFTPOperationException("Invalid data"); 
+            throw new IllegalTFTPOperationException("Invalid data");
 
         short ec = (short) ((data[0] << 8) | (data[1] & 0xff));
 
@@ -224,7 +222,7 @@ class ERROR extends TftpInstruction {
 
         this.errorCode = ErrorCode.values()[ec];
 
-        this.errorMsg = new String(data, 2, data.length - 2, StandardCharsets.UTF_8); 
+        this.errorMsg = new String(data, 2, data.length - 2, StandardCharsets.UTF_8);
     }
 
     public ERROR(ErrorCode errorCode, String errorMsg) {
@@ -260,7 +258,7 @@ class ERROR extends TftpInstruction {
         FILE_ALREADY_EXISTS(5),
         USER_NOT_LOGGED_IN(6), USER_ALREADY_LOGGED_IN(7);
 
-        private int value;
+        private final int value;
 
         ErrorCode(int value) {
             this.value = value;
