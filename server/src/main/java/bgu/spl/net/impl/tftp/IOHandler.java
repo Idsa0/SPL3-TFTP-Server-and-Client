@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IOHandler {
-    private final static String PATH = System.getProperty("user.dir") + "/Files/";
+    private final String PATH;
     private IOHandlerMode mode;
     private String filename;
     private short blockNumber;
@@ -24,11 +24,17 @@ public class IOHandler {
     public IOHandler(IOHandlerMode mode) {
         this.mode = mode;
         this.blockNumber = 1;
+        String path = System.getProperty("user.dir");
+        if (path.contains("server"))
+            PATH = path + "/Files/";
+        else
+            PATH = path + "/server/Files/";
     }
 
     public IOHandler(String filename, IOHandlerMode mode) {
         this(mode);
         this.filename = filename;
+
     }
 
     public short getBlockNumber() {
@@ -70,24 +76,23 @@ public class IOHandler {
     }
 
     public boolean fileExists() {
-        System.out.println(PATH + filename);
         return new File(PATH + filename).isFile();
     }
 
     public void start() throws FileNotFoundException {
         if (mode == IOHandlerMode.DIR) {
-            String[] strArr = Stream.of(new File(PATH).listFiles()) // TODO right directory
+            String[] strArr = Stream.of(new File(PATH).listFiles())
                     .filter(file -> !file.isDirectory())
+                    .filter(file -> !file.isHidden())
                     .map(File::getName)
                     .map((String str) -> str.concat("\0"))
                     .collect(Collectors.toSet())
                     .toArray(new String[0]);
-                    // TODO test all packets with empty data
 
             if (strArr.length == 0) {
-                strArr = new String[] {"Directory is empty"};
+                strArr = new String[] { "Directory is empty" };
             }
-            StringBuilder builder = new StringBuilder();  // TODO in client we need to read command input with spaces in filenames
+            StringBuilder builder = new StringBuilder();
 
             for (String str : strArr)
                 builder.append(str);

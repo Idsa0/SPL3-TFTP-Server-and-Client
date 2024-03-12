@@ -1,5 +1,7 @@
 package bgu.spl.net.impl.tftp;
 
+import java.io.IOException;
+
 import bgu.spl.net.api.BidiMessagingProtocol;
 
 public class TftpClientProtocol implements BidiMessagingProtocol<TftpInstruction> {
@@ -13,7 +15,7 @@ public class TftpClientProtocol implements BidiMessagingProtocol<TftpInstruction
 
     @Override
     public void process(TftpInstruction message) {
-        
+
         tftpProtocolStateMachine.execute(message);
     }
 
@@ -28,6 +30,9 @@ public class TftpClientProtocol implements BidiMessagingProtocol<TftpInstruction
 
     public void terminate() {
         shouldTerminate = true;
-        // TODO interrupt if needed?
+        try {
+            tftpProtocolStateMachine.close();
+        } catch (IOException ignored) {
+        }
     }
 }

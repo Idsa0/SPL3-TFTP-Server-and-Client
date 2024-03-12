@@ -1,5 +1,6 @@
 package bgu.spl.net.impl.tftp;
 
+import java.io.Closeable;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
@@ -8,12 +9,13 @@ import java.util.Queue;
 
 import bgu.spl.net.impl.tftp.IOHandler.IOHandlerMode;
 
-public class TftpProtocolStateMachine {
+public class TftpProtocolStateMachine implements Closeable {
 
     private State currentState;
     private IOHandler ioHandler;
     private TftpInstruction currentInstruction;
     private final Object userInputLock = new Object();
+    private volatile boolean userInputLockFlag = false;
     private short blockNumberExpected = 1;
     private ClientListener listener = null;
     private Queue<Byte> directoryListBuffer = new ArrayDeque<>();
@@ -47,15 +49,26 @@ public class TftpProtocolStateMachine {
     }
 
     private void handleERROR(ERROR instruction) {
-        System.out.println("Received ERROR: ERROR code: " + instruction.getErrorCode().value() + " Message: "
+        System.out.println("> Error: code " + instruction.getErrorCode().value() + " message: "
                 + instruction.getErrorMsg());
+
+        if (currentState == State.RRQ)
+            ioHandler.deleteFile();
         reset();
-        wakeUpKeyboardListener(); 
-        // TODO special case if there are opened files that must be removed.
+        wakeUpKeyboardListener();
     }
 
     private void wakeUpKeyboardListener() {
+
         synchronized (userInputLock) {
+            if (!userInputLockFlag) {
+                try {
+                    userInputLock.wait();
+                } catch (InterruptedException ignored) {
+
+                }
+            }
+            userInputLockFlag = false;
             userInputLock.notifyAll();
         }
     }
@@ -70,7 +83,6 @@ public class TftpProtocolStateMachine {
                 for (byte b : data)
                     directoryListBuffer.add(b);
 
-                // TODO find all .toString() in code.
                 if (instruction.getPacketSize() < 512) {
                     StringBuilder sb = new StringBuilder();
                     for (byte b : directoryListBuffer)
@@ -94,7 +106,6 @@ public class TftpProtocolStateMachine {
                 if (instruction.getBlockNumber() != blockNumberExpected)
                     throw new IllegalStateException();
 
-                
                 try {
                     ioHandler.writeNext(instruction.getData());
                 } catch (IOException e) {
@@ -108,7 +119,7 @@ public class TftpProtocolStateMachine {
                 ++blockNumberExpected;
 
                 if (ioHandler.isIODone()) {
-                    System.out.println("RRQ done");
+                    System.out.println("> RRQ " + ((RRQ) currentInstruction).getFilename() + " complete");
                     reset();
                     wakeUpKeyboardListener();
                 }
@@ -127,7 +138,7 @@ public class TftpProtocolStateMachine {
                 if (instruction.getBlockNumber() != 0)
                     throw new IllegalStateException();
 
-                System.out.println("ACK 0");
+                System.out.println("> ACK 0");
                 reset();
                 wakeUpKeyboardListener();
                 return;
@@ -135,8 +146,9 @@ public class TftpProtocolStateMachine {
                 if (instruction.getBlockNumber() != blockNumberExpected - 1)
                     throw new IllegalStateException();
 
+                System.out.println("> ACK " + instruction.getBlockNumber());
                 if (ioHandler.isIODone()) {
-                    System.out.println("WRQ completed");
+                    System.out.println("> WRQ " + ((WRQ) currentInstruction).getFilename() + " complete");
                     reset();
                     wakeUpKeyboardListener();
                     return;
@@ -147,7 +159,7 @@ public class TftpProtocolStateMachine {
                 try {
                     dataInstruction = DATA.buildData(ioHandler.readNext(), blockNumberExpected);
                 } catch (IOException e) {
-                    System.out.println("IO error on client side");
+                    System.out.println("> IO error on client side");
                     dataInstruction = DATA.buildData(new byte[] { 0, 0, 0, 0 }, blockNumberExpected);
                     ioHandler.IODone();
                 }
@@ -174,7 +186,7 @@ public class TftpProtocolStateMachine {
 
     private void printOutBCAST(BCAST instruction) {
         System.out.println(
-                "File " + (instruction.getAdded() ? "added" : "deleted") + ": \"" + instruction.getFilename() + "\"");
+                "> BCAST " + (instruction.getAdded() ? "add" : "del") + ": \"" + instruction.getFilename() + "\"");
     }
 
     private enum State {
@@ -187,8 +199,11 @@ public class TftpProtocolStateMachine {
 
         if (startState(userInput)) {
 
-            synchronized (userInputLock) { // TODO race(the good one) condition
+            synchronized (userInputLock) {
                 try {
+                    userInputLockFlag = true;
+                    userInputLock.notifyAll();
+                    ;
                     userInputLock.wait();
                 } catch (InterruptedException e) {
                     return;
@@ -197,10 +212,18 @@ public class TftpProtocolStateMachine {
         }
     }
 
+    /**
+     * returns false if there is no packet to send, i.e. the job is cancelled.
+     * Performs the start of the job otherwise and then sends appropriate packet.
+     * 
+     * @param userInput
+     * @return
+     */
+
     private boolean startState(TftpInstruction userInput) {
+
         currentInstruction = userInput;
 
-        // TODO remove files created on RRQ that don't exist.
         switch (userInput.opcode) {
             case DELRQ:
                 currentState = State.DELRQ;
@@ -227,7 +250,7 @@ public class TftpProtocolStateMachine {
                     ioHandler.start();
                 } catch (FileNotFoundException ignored) {
                 }
-                
+
                 break;
             case WRQ:
                 currentState = State.WRQ;
@@ -235,15 +258,20 @@ public class TftpProtocolStateMachine {
                 try {
                     ioHandler.start();
                 } catch (FileNotFoundException e) {
-                    System.out.println("File Not Found");
+                    System.out.println("> file not found");
                     reset();
                     return false;
                 }
                 break;
             default:
-                throw new RuntimeException("Something bad happened");
+                throw new IllegalStateException();
         }
         listener.send(userInput);
         return true;
+    }
+
+    @Override
+    public void close() throws IOException {
+        reset();
     }
 }

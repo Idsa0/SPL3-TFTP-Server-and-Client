@@ -10,7 +10,7 @@ import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
 public class IOHandler {
-    private final static String PATH = System.getProperty("user.dir") + "/";
+    private final String PATH;
 
     private IOHandlerMode mode;
     private String filename;
@@ -24,11 +24,17 @@ public class IOHandler {
     public IOHandler(IOHandlerMode mode) {
         this.mode = mode;
         this.blockNumber = 1;
+        String path = System.getProperty("user.dir");
+        if (path.contains("client"))
+            PATH = path + "/";
+        else
+            PATH = path + "/client/";
     }
 
     public IOHandler(String filename, IOHandlerMode mode) {
         this(mode);
         this.filename = filename;
+
     }
 
     public short getBlockNumber() {
@@ -46,8 +52,8 @@ public class IOHandler {
         byte[] readData = new byte[512];
         int readSize = 0;
         if (mode == IOHandlerMode.DIR) {
-            readSize = dirqIn.read(readData); // TODO handle -1 on EOF
-            if (readSize == 0) {
+            readSize = dirqIn.read(readData);
+            if (readSize <= 0) {
                 readData[0] = 0;
                 readSize = 1;
             }
@@ -55,7 +61,7 @@ public class IOHandler {
                 ioDone = true;
         } else {
             readSize = in.read(readData);
-            if (readSize == 0) {
+            if (readSize <= 0) {
                 readData[0] = 0;
                 readSize = 1;
             }
@@ -88,8 +94,7 @@ public class IOHandler {
             filenamesBytes = builder.toString().getBytes();
 
             dirqIn = new ByteArrayInputStream(filenamesBytes);
-        } else if (mode == IOHandlerMode.READ){
-            System.out.println(PATH + filename);
+        } else if (mode == IOHandlerMode.READ) {
             in = new FileInputStream(PATH + filename);
         } else
             out = new FileOutputStream(PATH + filename);
@@ -138,5 +143,5 @@ public class IOHandler {
     public void IODone() {
         ioDone = true;
     }
-    
+
 }

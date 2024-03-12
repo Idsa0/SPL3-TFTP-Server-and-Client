@@ -51,7 +51,7 @@ public abstract class TftpInstruction implements java.io.Serializable {
                 case 4:
                     return new ACK(data);
                 case 5:
-                    return new ERROR(data); // TODO instruction parsing should change here in the client version.
+                    return new ERROR(data);
                 case 6:
                     return new DIRQ(data);
                 case 7:
@@ -86,7 +86,7 @@ class RRQ extends TftpInstruction {
     private final String filename;
 
     public RRQ(byte[] data) {
-        this(new String(data).substring(0, data.length - 1));
+        this(new String(data, StandardCharsets.UTF_8).substring(0, data.length - 1));
     }
 
     public RRQ(String filename) {
@@ -115,7 +115,7 @@ class WRQ extends TftpInstruction {
     private final String filename;
 
     public WRQ(byte[] data) {
-        this(new String(data).substring(0, data.length - 1));
+        this(new String(data, StandardCharsets.UTF_8).substring(0, data.length - 1));
     }
 
     public WRQ(String filename) {
@@ -246,7 +246,7 @@ class ERROR extends TftpInstruction {
         super(Opcode.ERROR);
 
         if (data.length < 3)
-            throw new IllegalTFTPOperationException("Invalid data"); // TODO < 4? check forum
+            throw new IllegalTFTPOperationException("Invalid data");
 
         short ec = (short) ((data[0] << 8) | (data[1] & 0xff));
 
@@ -255,7 +255,8 @@ class ERROR extends TftpInstruction {
 
         this.errorCode = ErrorCode.values()[ec];
 
-        this.errorMsg = new String(data, 2, data.length - 2);
+        
+        this.errorMsg = new String(data, 2, data.length - 2, StandardCharsets.UTF_8);
     }
 
     public ERROR(ErrorCode errorCode, String errorMsg) {
@@ -324,9 +325,8 @@ class LOGRQ extends TftpInstruction {
     private final String username;
 
     public LOGRQ(byte[] data) {
-        this(new String(data).substring(0, data.length - 1));
+        this(new String(data, StandardCharsets.UTF_8).substring(0, data.length - 1));
     }
-
     public LOGRQ(String username) {
         super(Opcode.LOGRQ);
         this.username = username;
@@ -353,7 +353,7 @@ class DELRQ extends TftpInstruction {
     private final String filename;
 
     public DELRQ(byte[] data) {
-        this(new String(data).substring(0, data.length - 1));
+        this(new String(data, StandardCharsets.UTF_8).substring(0, data.length - 1));
     }
 
     public DELRQ(String filename) {
@@ -403,7 +403,6 @@ class BCAST extends TftpInstruction {
 
         added = addByte == 1;
         filename = new String(stringBytes, StandardCharsets.UTF_8);
-        // TODO change all toString() methods acting on byte[]
     }
 
     public boolean getAdded() {

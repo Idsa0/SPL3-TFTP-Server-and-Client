@@ -112,7 +112,6 @@ public class TftpProtocolStateMachine {
 
     private void beginRRQ(RRQ instruction) {
         currentState = State.RRQ;
-
         ioHandler = new IOHandler(instruction.getFilename(), IOHandlerMode.READ);
         try {
             ioHandler.start();
@@ -150,8 +149,7 @@ public class TftpProtocolStateMachine {
                 else {
                     connections.send(connectionId,
                             new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-                    endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                    // and wait for the right package?
+                    endDataTransfer(); 
                 }
             } else {
                 endDataTransfer();
@@ -160,8 +158,7 @@ public class TftpProtocolStateMachine {
         } else {
             connections.send(connectionId,
                     new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-            endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-            // and wait for the right package?
+            endDataTransfer(); 
             return;
         }
     }
@@ -203,13 +200,15 @@ public class TftpProtocolStateMachine {
                     return;
                 }
             } else {
+                ioHandler.deleteFile();
                 connections.send(connectionId,
                         new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting DATA " + ioHandler.getBlockNumber()));
-                endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                // and wait for the right package?
+                endDataTransfer(); 
                 return;
+
             }
         } else {
+            ioHandler.deleteFile();
             connections.send(connectionId,
                     new ERROR(ErrorCode.NOT_DEFINED, "Expecting DATA" + ioHandler.getBlockNumber()));
             endDataTransfer();
@@ -253,8 +252,7 @@ public class TftpProtocolStateMachine {
                 else {
                     connections.send(connectionId,
                             new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-                    endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-                    // and wait for the right package?
+                    endDataTransfer(); 
                     return;
                 }
             }
@@ -265,8 +263,7 @@ public class TftpProtocolStateMachine {
         } else {
             connections.send(connectionId,
                     new ERROR(ERROR.ErrorCode.NOT_DEFINED, "expecting ACK " + ioHandler.getBlockNumber()));
-            endDataTransfer(); // TODO should a wrong ACK terminate the transfer or do we continue in transfer,
-            // and wait for the right package?
+            endDataTransfer(); 
         }
     }
 

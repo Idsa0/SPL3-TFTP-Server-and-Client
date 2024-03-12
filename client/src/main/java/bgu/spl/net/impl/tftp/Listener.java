@@ -1,5 +1,4 @@
 package bgu.spl.net.impl.tftp;
-// TODO package name clash
 
 import bgu.spl.net.api.MessageEncoderDecoder;
 
@@ -11,7 +10,7 @@ import java.net.Socket;
 
 public class Listener implements Runnable, Closeable, ClientListener {
     private final TftpClientProtocol protocol;
-    private final MessageEncoderDecoder<TftpInstruction> encdec; // TODO: can or should we move this back to generic?
+    private final MessageEncoderDecoder<TftpInstruction> encdec;
     private Socket sock = null;
     private BufferedInputStream in;
     private BufferedOutputStream out;
@@ -21,7 +20,7 @@ public class Listener implements Runnable, Closeable, ClientListener {
                     TftpClientProtocol protocol) {
         try {
             this.sock = new Socket(addressName, port);
-        } catch (Exception e) {
+        } catch (IOException e) {
             e.printStackTrace();
         }
 
@@ -38,28 +37,20 @@ public class Listener implements Runnable, Closeable, ClientListener {
             in = new BufferedInputStream(sock.getInputStream());
             out = new BufferedOutputStream(sock.getOutputStream());
 
-            // TODO "read = in.read() >= 0" might make troubles in a bidi connection.
             while (!protocol.shouldTerminate() && connected && (read = in.read()) >= 0) {
-
-
                 TftpInstruction nextMessage = encdec.decodeNextByte((byte) read);
-                if (nextMessage != null) // TODO: if we are reading a packet, we should be blocking the keyboard thread
-                    // from changing us.
+                if (nextMessage != null)
                     protocol.process(nextMessage);
             }
-        } catch (IOException ex) {
-            System.out.println(ex.getCause());
+        } catch (IOException ignored) {
         }
     }
 
     @Override
     public synchronized void close() throws IOException {
         connected = false;
-        
         sock.close();
-        
-        
-        // TODO: anything else to close?
+        protocol.terminate();
     }
 
     @Override
@@ -67,8 +58,8 @@ public class Listener implements Runnable, Closeable, ClientListener {
         try {
             out.write(encdec.encode(msg));
             out.flush();
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 
@@ -76,5 +67,5 @@ public class Listener implements Runnable, Closeable, ClientListener {
         protocol.startStateAndWait(userInput);
     }
 
-  
+    
 }

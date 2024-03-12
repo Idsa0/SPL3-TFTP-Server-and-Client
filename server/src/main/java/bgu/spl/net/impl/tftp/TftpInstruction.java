@@ -86,7 +86,7 @@ class RRQ extends TftpInstruction {
 
     public RRQ(byte[] data) {
         super(Opcode.RRQ);
-        this.filename = new String(data).substring(0, data.length - 1);
+        this.filename = new String(data, StandardCharsets.UTF_8).substring(0, data.length - 1);
     }
 
     public String getFilename() {
@@ -99,7 +99,7 @@ class WRQ extends TftpInstruction {
 
     public WRQ(byte[] data) {
         super(Opcode.WRQ);
-        this.filename = new String(data).substring(0, data.length - 1);
+        this.filename = new String(data, StandardCharsets.UTF_8).substring(0, data.length - 1);
     }
 
     public String getFilename() {
@@ -215,7 +215,7 @@ class ERROR extends TftpInstruction {
         super(Opcode.ERROR);
 
         if (data.length < 3)
-            throw new IllegalTFTPOperationException("Invalid data"); // TODO < 4? check forum
+            throw new IllegalTFTPOperationException("Invalid data"); 
 
         short ec = (short) ((data[0] << 8) | (data[1] & 0xff));
 
@@ -224,8 +224,7 @@ class ERROR extends TftpInstruction {
 
         this.errorCode = ErrorCode.values()[ec];
 
-        this.errorMsg = new String(data, 2, data.length - 2); // TODO: for some reason im not sure if
-        // we can reach here with an error message from client, which would bungle things.
+        this.errorMsg = new String(data, 2, data.length - 2, StandardCharsets.UTF_8); 
     }
 
     public ERROR(ErrorCode errorCode, String errorMsg) {
@@ -288,7 +287,7 @@ class LOGRQ extends TftpInstruction {
 
     public LOGRQ(byte[] data) {
         super(Opcode.LOGRQ);
-        this.username = new String(data).substring(0, data.length - 1);
+        this.username = new String(data, StandardCharsets.UTF_8).substring(0, data.length - 1);
     }
 
     public String getUsername() {

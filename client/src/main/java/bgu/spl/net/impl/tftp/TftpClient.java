@@ -14,7 +14,7 @@ public class TftpClient {
         Listener listen = new Listener(ip, port, new TftpEncoderDecoder(), new TftpClientProtocol());
         KeyboardListener keyboardListener = new KeyboardListener(listen);
         
-        new Thread(listen, "Communication thread").start(); // TODO synchronized their running so they are online at the same time.
+        new Thread(listen, "Communication thread").start();
         new Thread(keyboardListener, "Keyboard thread").start();
     }
 }

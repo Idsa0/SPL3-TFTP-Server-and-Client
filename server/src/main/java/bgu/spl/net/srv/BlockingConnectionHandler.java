@@ -37,17 +37,14 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
             connections.connect(connectionID, this);
             protocol.start(connectionID, connections);
 
-            // TODO "read = in.read() >= 0" might make troubles in a bidi connection.
             while (!protocol.shouldTerminate() && connected && (read = in.read()) >= 0) {
                 T nextMessage = encdec.decodeNextByte((byte) read);
                 if (nextMessage != null)
                     protocol.process(nextMessage);
             }
-
             connections.disconnect(connectionID);
             close();
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (IOException ignored) {
         }
     }
 
@@ -62,8 +59,8 @@ public class BlockingConnectionHandler<T> implements Runnable, ConnectionHandler
         try {
             out.write(encdec.encode(msg));
             out.flush();
-        } catch (IOException ex) {
-            ex.printStackTrace();
+        } catch (IOException e) {
+            e.printStackTrace();
         }
     }
 

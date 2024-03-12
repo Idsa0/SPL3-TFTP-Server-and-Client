@@ -11,7 +11,6 @@ public class TftpEncoderDecoder implements MessageEncoderDecoder<TftpInstruction
     private short bitsLeft = 0;
     private short opCode;
 
-    // TODO: can we move this, IOHandler, and other files which are repeated in server into an external library?
     @Override
     public TftpInstruction decodeNextByte(byte nextByte) {
         bytes[len++] = nextByte;

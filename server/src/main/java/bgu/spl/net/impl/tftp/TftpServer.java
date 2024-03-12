@@ -29,14 +29,13 @@ public class TftpServer<T> extends BaseServer<T> {
         TftpServer<TftpInstruction> server = new TftpServer<TftpInstruction>(port,
                 TftpProtocol::new,
                 TftpEncoderDecoder::new,
-                (Connections<TftpInstruction>) new BlockingConnections());
+                new BlockingConnections());
 
         server.serve();
 
         try {
             server.close();
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ignored) {
         }
     }
 }

@@ -1,5 +1,6 @@
 package bgu.spl.net.impl.tftp;
 
+import java.io.IOException;
 import java.util.Scanner;
 
 import bgu.spl.net.impl.tftp.TftpInstruction.Opcode;
@@ -14,12 +15,14 @@ public class KeyboardListener implements Runnable {
     }
 
     public void run() {
+
+
         Scanner s = new Scanner(System.in);
         TftpInstruction userInput;
         while (!shouldTerminate) {
-            userInput = parseArgs(s.nextLine().split(" ")); // TODO test split(" ")
+            userInput = parseArgs(s.nextLine().split(" "));
             if (userInput == null)
-                System.out.println("Invalid instruction - please read manual");
+                System.out.println("> Invalid instruction - please read manual");
             else {
                 listener.processUserInputAndWait(userInput);
                 endProcess(userInput);
@@ -29,34 +32,35 @@ public class KeyboardListener implements Runnable {
         s.close();
         try {
             listener.close();
-        } catch (Exception e) {
-            e.printStackTrace();
+        } catch (IOException ignored) {
         }
     }
 
     private void endProcess(TftpInstruction userInput) {
         if (userInput.opcode == Opcode.DISC)
             shouldTerminate = true;
-    }
-
-    
+    }  
 
     public boolean shouldTerminate() {
         return shouldTerminate;
     }
 
     private TftpInstruction parseArgs(String[] args) {
-        if (args.length > 2)
-            return null;
-
+        String name = "";
+        if (args.length > 2){
+            String[] tmpArr = new String[args.length-1];
+            System.arraycopy(args, 1, tmpArr, 0, args.length - 1);
+            name = String.join(" ", tmpArr);
+        } else if (args.length == 2)
+            name = args[1];
         try {
             Opcode opcode = TftpInstruction.Opcode.valueOf(args[0]);
 
             switch (opcode) {
                 case DELRQ:
-                    if (args.length != 2)
+                    if (args.length < 2)
                         return null;
-                    return new DELRQ(args[1]);
+                    return new DELRQ(name);
                 case DIRQ:
                     if (args.length != 1)
                         return null;
@@ -66,17 +70,17 @@ public class KeyboardListener implements Runnable {
                         return null;
                     return new DISC();
                 case LOGRQ:
-                    if (args.length != 2)
+                    if (args.length < 2)
                         return null;
-                    return new LOGRQ(args[1]);
+                    return new LOGRQ(name);
                 case RRQ:
-                    if (args.length != 2)
+                    if (args.length < 2)
                         return null;
-                    return new RRQ(args[1]);
+                    return new RRQ(name);
                 case WRQ:
-                    if (args.length != 2)
+                    if (args.length < 2)
                         return null;
-                    return new WRQ(args[1]);
+                    return new WRQ(name);
                 default:
                     return null;
             }
