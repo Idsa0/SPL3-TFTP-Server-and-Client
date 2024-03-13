@@ -10,12 +10,4 @@ public interface Connections<T> extends Iterable<ConnectionHandler<T>>, Closeabl
     void disconnect(int connectionId);
 
     int getUniqueID();
-
-    boolean isUserLoggedIn(String username);
-
-    boolean addUsername(String username, int connectionId);
-
-    boolean removeUsername(String username);
-
-    String getUsername(int connectionId);
 }

@@ -34,12 +34,10 @@ public class BlockingConnections implements Connections<TftpInstruction> {
         handlers.remove(connectionId);
     }
 
-    @Override
     public boolean isUserLoggedIn(String username) {
         return usernames.containsKey(username);
     }
 
-    @Override
     public boolean addUsername(String username, int connectionId) {
         if (usernames.containsValue(connectionId) || isUserLoggedIn(username))
             return false;
@@ -48,7 +46,6 @@ public class BlockingConnections implements Connections<TftpInstruction> {
         return true;
     }
 
-    @Override
     public boolean removeUsername(String username) {
         if (!isUserLoggedIn(username))
             return false;
@@ -57,7 +54,6 @@ public class BlockingConnections implements Connections<TftpInstruction> {
         return true;
     }
 
-    @Override
     public String getUsername(int connectionId) {
         for (String str : usernames.keySet())
             if (usernames.get(str) == connectionId)

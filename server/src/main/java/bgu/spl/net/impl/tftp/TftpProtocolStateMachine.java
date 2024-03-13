@@ -6,18 +6,18 @@ import java.io.IOException;
 import bgu.spl.net.impl.tftp.ERROR.ErrorCode;
 import bgu.spl.net.impl.tftp.IOHandler.IOHandlerMode;
 import bgu.spl.net.impl.tftp.TftpInstruction.Opcode;
+import bgu.spl.net.srv.BlockingConnections;
 import bgu.spl.net.srv.ConnectionHandler;
-import bgu.spl.net.srv.Connections;
 
 public class TftpProtocolStateMachine {
-    final private Connections<TftpInstruction> connections;
+    final private BlockingConnections connections;
     final private int connectionId;
 
     private State currentState;
 
     private IOHandler ioHandler;
 
-    public TftpProtocolStateMachine(Connections<TftpInstruction> connections, int connectionId) {
+    public TftpProtocolStateMachine(BlockingConnections connections, int connectionId) {
         this.connections = connections;
         this.connectionId = connectionId;
         this.currentState = State.NOT_LOGGED_IN;

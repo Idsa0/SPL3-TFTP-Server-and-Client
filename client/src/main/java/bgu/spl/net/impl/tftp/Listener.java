@@ -67,3 +67,4 @@ public class Listener implements Runnable, Closeable, ClientListener {
         protocol.startStateAndWait(userInput);
     }
 }
+mvn exec:java -Dexec.mainClass="bgu.spl.net.impl.tftp.TftpClient" -Dexec.args="<ip> <port>"
