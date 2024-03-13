@@ -21,7 +21,8 @@ public class Listener implements Runnable, Closeable, ClientListener {
         try {
             this.sock = new Socket(addressName, port);
         } catch (IOException e) {
-            e.printStackTrace();
+            System.out.println("Cannot connect!");
+            System.exit(-1);
         }
 
         this.encdec = reader;
@@ -67,4 +68,3 @@ public class Listener implements Runnable, Closeable, ClientListener {
         protocol.startStateAndWait(userInput);
     }
 }
-mvn exec:java -Dexec.mainClass="bgu.spl.net.impl.tftp.TftpClient" -Dexec.args="<ip> <port>"

@@ -11,10 +11,10 @@ public class TftpClient {
         if (args.length >= 2)
             port = Integer.parseInt(args[1]);
 
-        Listener listen = new Listener(ip, port, new TftpEncoderDecoder(), new TftpClientProtocol());
-        KeyboardListener keyboardListener = new KeyboardListener(listen);
+        Listener communicatorThread = new Listener(ip, port, new TftpEncoderDecoder(), new TftpClientProtocol());
+        KeyboardListener keyboardThread = new KeyboardListener(communicatorThread);
 
-        new Thread(listen, "Communication thread").start();
-        new Thread(keyboardListener, "Keyboard thread").start();
+        new Thread(communicatorThread, "Communication thread").start();
+        new Thread(keyboardThread, "Keyboard thread").start();
     }
 }
