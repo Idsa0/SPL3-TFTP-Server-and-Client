@@ -104,3 +104,32 @@ There are two types of commands, Server-to-Client and Client-to-Server. The comm
 10. **DISC (Disconnect)**
    - **Opcode:** 10
    - **Format:** `[Opcode]`
+
+## Building and Running
+
+### Prerequisites
+
+- Ensure you have Java Development Kit (JDK) installed, preferably version 8 or higher.
+- Apache Maven is recommended for building the project.
+
+### Building the Project
+
+1. **Clone the Repository**
+   ```
+   git clone <repository-url>
+   cd <repository-directory>
+   ```
+
+2. **Build with Maven**
+   - **From the server directory and from the client directory:** `mvn compile`
+
+### Running the Project
+
+- **From the server directory:**
+     ```
+     mvn exec:java -Dexec.mainClass="bgu.spl.net.impl.tftp.TftpServer" -Dexec.args="<port>"
+     ```
+- **From the client directory:**
+     ```
+     mvn exec:java -Dexec.mainClass="bgu.spl.net.impl.stomp.tftp.TftpClient" -Dexec.args="<ip> <port>"
+     ```
