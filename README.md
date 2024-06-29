@@ -54,7 +54,7 @@ The client operates using two threads:
    - Prints `BCAST <del/add> <file name>` to the terminal.
 
 4. **Error Packet**
-   - Prints `Error <Error number> <Error Message if exist>` to the terminal.
+   - Prints `Error <Error number> <Error message if exists>` to the terminal.
 
 ## TFTP Protocol
 
@@ -115,7 +115,7 @@ There are two types of commands, Server-to-Client and Client-to-Server. The comm
 ### Building the Project
 
 1. **Clone the Repository**
-   ```
+   ```sh
    git clone <repository-url>
    cd <repository-directory>
    ```
@@ -126,10 +126,10 @@ There are two types of commands, Server-to-Client and Client-to-Server. The comm
 ### Running the Project
 
 - **From the server directory:**
-     ```
+     ```sh
      mvn exec:java -Dexec.mainClass="bgu.spl.net.impl.tftp.TftpServer" -Dexec.args="<port>"
      ```
 - **From the client directory:**
-     ```
+     ```sh
      mvn exec:java -Dexec.mainClass="bgu.spl.net.impl.stomp.tftp.TftpClient" -Dexec.args="<ip> <port>"
      ```
